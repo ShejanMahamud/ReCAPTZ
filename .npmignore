@@ -1,0 +1,34 @@
+# Source
+src/
+public/
+
+# Config files
+.eslintrc
+.prettierrc
+.gitignore
+.editorconfig
+.env*
+*.config.js
+*.config.ts
+tsconfig*.json
+
+# Development
+node_modules/
+.vscode/
+.idea/
+.git/
+.github/
+.bolt/
+
+# Build tools
+vite.config.ts
+
+# Tests
+__tests__/
+*.test.*
+*.spec.*
+
+# Misc
+.DS_Store
+*.log
+*.lock
