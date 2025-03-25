@@ -2,8 +2,6 @@
 
 A modern, customizable CAPTCHA component for React applications with TypeScript support. This package provides multiple CAPTCHA types, validation rules, and a beautiful UI out of the box.
 
-![ReCAPTZ Demo](https://github.com/shejanmaharjan/recaptz/raw/main/demo.gif)
-
 ## Features
 
 - 🎨 **Beautiful Design**: Modern, clean UI with dark mode support and gradient effects

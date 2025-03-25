@@ -1,6 +1,6 @@
 {
   "name": "recaptz",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "type": "module",
   "main": "dist/recaptz.umd.js",
@@ -60,12 +60,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shejanmaharjan/recaptz"
+    "url": "https://github.com/ShejanMahamud/recaptz"
   },
   "bugs": {
-    "url": "https://github.com/shejanmaharjan/recaptz/issues"
+    "url": "https://github.com/ShejanMahamud/recaptz/issues"
   },
-  "homepage": "https://github.com/shejanmaharjan/recaptz#readme",
+  "homepage": "https://github.com/ShejanMahamud/recaptz#readme",
   "publishConfig": {
     "access": "public"
   }
