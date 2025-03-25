@@ -60,7 +60,7 @@ function App() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/shejanmaharjan/recaptz"
+              href="https://github.com/ShejanMahamud/recaptz"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors"
@@ -98,7 +98,7 @@ function App() {
             <a href="#demos" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
               View Demos
             </a>
-            <a href="#documentation" className="px-6 py-3 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all font-medium">
+            <a href="https://github.com/ShejanMahamud/recaptz#readme" className="px-6 py-3 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all font-medium">
               Documentation
             </a>
           </div>
