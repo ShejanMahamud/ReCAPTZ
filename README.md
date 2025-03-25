@@ -2,6 +2,8 @@
 
 A modern, customizable CAPTCHA component for React applications with TypeScript support. This package provides multiple CAPTCHA types, validation rules, and a beautiful UI out of the box.
 
+![ReCAPTZ Demo](https://github.com/shejanmaharjan/recaptz/raw/main/demo.gif)
+
 ## Features
 
 - 🎨 **Beautiful Design**: Modern, clean UI with dark mode support and gradient effects
@@ -47,9 +49,11 @@ function App() {
 }
 ```
 
-## CAPTCHA Types
+## Examples
 
-### Numbers Only
+### Basic Types
+
+#### Numbers Only
 ```tsx
 <Captcha
   type="numbers"
@@ -57,12 +61,14 @@ function App() {
   onValidate={(isValid) => console.log('Valid:', isValid)}
   validationRules={{
     required: true,
-    allowedCharacters: '0123456789'
+    allowedCharacters: '0123456789',
+    minLength: 4,
+    maxLength: 4
   }}
 />
 ```
 
-### Letters Only
+#### Letters Only
 ```tsx
 <Captcha
   type="letters"
@@ -75,7 +81,7 @@ function App() {
 />
 ```
 
-### Mixed Characters
+#### Mixed Characters
 ```tsx
 <Captcha
   type="mixed"
@@ -89,11 +95,54 @@ function App() {
 />
 ```
 
-### Custom Characters
+### Advanced Features
+
+#### Timed CAPTCHA
+```tsx
+<Captcha
+  type="mixed"
+  length={5}
+  refreshInterval={30} // Refreshes every 30 seconds
+  onValidate={(isValid) => console.log('Valid:', isValid)}
+  validationRules={{
+    required: true,
+    minLength: 5
+  }}
+/>
+```
+
+#### Accessible CAPTCHA
+```tsx
+<Captcha
+  type="letters"
+  length={4}
+  autoFocus
+  showSuccessAnimation
+  onValidate={(isValid) => console.log('Valid:', isValid)}
+  validationRules={{
+    required: true
+  }}
+/>
+```
+
+#### Dark Mode
+```tsx
+<Captcha
+  type="mixed"
+  length={6}
+  darkMode
+  onValidate={(isValid) => console.log('Valid:', isValid)}
+  validationRules={{
+    required: true
+  }}
+/>
+```
+
+#### Complex Validation
 ```tsx
 <Captcha
   customCharacters="ABCDEF123456"
-  length={5}
+  length={6}
   caseSensitive={true}
   onValidate={(isValid) => console.log('Valid:', isValid)}
   validationRules={{
@@ -102,44 +151,34 @@ function App() {
     customValidator: (value) => {
       const hasLetter = /[A-F]/.test(value);
       const hasNumber = /[1-6]/.test(value);
-      return (hasLetter && hasNumber) || 'Must contain at least one letter and one number';
+      const hasMinLength = value.length >= 6;
+      if (!hasLetter) return 'Must contain at least one letter';
+      if (!hasNumber) return 'Must contain at least one number';
+      if (!hasMinLength) return 'Must be 6 characters long';
+      return true;
     }
   }}
 />
 ```
 
-## Props
+### Styling
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `type` | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate |
-| `length` | `number` | `6` | Length of CAPTCHA text |
-| `onChange` | `(value: string) => void` | - | Callback when input changes |
-| `onValidate` | `(isValid: boolean) => void` | - | Callback when validation occurs |
-| `className` | `string` | `''` | Additional CSS classes |
-| `refreshable` | `boolean` | `true` | Whether CAPTCHA can be refreshed |
-| `caseSensitive` | `boolean` | `false` | Case-sensitive validation |
-| `customCharacters` | `string` | - | Custom character set |
-| `customStyles` | `React.CSSProperties` | - | Custom inline styles |
-| `validationRules` | `ValidationRules` | - | Custom validation rules |
-| `darkMode` | `boolean` | `false` | Enable dark mode |
-
-## Validation Rules
-
-```typescript
-interface ValidationRules {
-  minLength?: number;
-  maxLength?: number;
-  allowedCharacters?: string;
-  required?: boolean;
-  caseSensitive?: boolean;
-  customValidator?: (value: string) => boolean | string;
-}
+#### Custom Classes and Styles
+```tsx
+<Captcha
+  className="my-custom-class"
+  customStyles={{
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    padding: '20px'
+  }}
+  darkMode={true}
+/>
 ```
 
-## Form Integration
+### Form Integration
 
-### React Hook Form
+#### React Hook Form
 ```tsx
 import { useForm } from 'react-hook-form';
 import { Captcha } from 'recaptz';
@@ -161,6 +200,7 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Form fields */}
       <Captcha
         type="mixed"
         length={6}
@@ -169,12 +209,13 @@ function LoginForm() {
           if (isValid) clearErrors('captcha');
         }}
       />
+      <button type="submit">Submit</button>
     </form>
   );
 }
 ```
 
-### Formik
+#### Formik
 ```tsx
 import { Formik, Form } from 'formik';
 import { Captcha } from 'recaptz';
@@ -191,6 +232,7 @@ function LoginForm() {
     >
       {({ setFieldValue }) => (
         <Form>
+          {/* Form fields */}
           <Captcha
             type="mixed"
             length={6}
@@ -198,6 +240,7 @@ function LoginForm() {
               setFieldValue('captchaValid', isValid);
             }}
           />
+          <button type="submit">Submit</button>
         </Form>
       )}
     </Formik>
@@ -205,20 +248,37 @@ function LoginForm() {
 }
 ```
 
-## Styling
+## Props
 
-The component uses Tailwind CSS classes by default but can be customized:
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `type` | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate |
+| `length` | `number` | `6` | Length of CAPTCHA text |
+| `onChange` | `(value: string) => void` | - | Callback when input changes |
+| `onValidate` | `(isValid: boolean) => void` | - | Callback when validation occurs |
+| `className` | `string` | `''` | Additional CSS classes |
+| `refreshable` | `boolean` | `true` | Whether CAPTCHA can be refreshed |
+| `caseSensitive` | `boolean` | `false` | Case-sensitive validation |
+| `customCharacters` | `string` | - | Custom character set |
+| `customStyles` | `React.CSSProperties` | - | Custom inline styles |
+| `validationRules` | `ValidationRules` | - | Custom validation rules |
+| `darkMode` | `boolean` | `false` | Enable dark mode |
+| `autoFocus` | `boolean` | `false` | Auto-focus the input field |
+| `showSuccessAnimation` | `boolean` | `false` | Show success animation |
+| `refreshInterval` | `number` | - | Auto-refresh interval in seconds |
+| `maxAttempts` | `number` | - | Maximum validation attempts |
 
-```tsx
-<Captcha
-  className="my-custom-class"
-  customStyles={{
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-    padding: '20px'
-  }}
-  darkMode={true}
-/>
+## Validation Rules
+
+```typescript
+interface ValidationRules {
+  minLength?: number;
+  maxLength?: number;
+  allowedCharacters?: string;
+  required?: boolean;
+  caseSensitive?: boolean;
+  customValidator?: (value: string) => boolean | string;
+}
 ```
 
 ## Keyboard Shortcuts
