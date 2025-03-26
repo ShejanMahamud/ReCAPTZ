@@ -1,6 +1,6 @@
 {
   "name": "recaptz",
-  "version": "1.0.1",
+  "version": "1.0.7",
   "private": false,
   "type": "module",
   "main": "dist/recaptz.umd.js",
@@ -17,31 +17,35 @@
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "@tailwindcss/vite": "^4.0.16",
+    "framer-motion": "^12.6.0",
+    "lucide-react": "^0.484.0",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0"
   },
   "dependencies": {
-    "@react-aria/focus": "^3.16.2",
-    "lucide-react": "^0.344.0",
-    "use-sound": "^4.0.1",
-    "canvas-confetti": "^1.9.2",
-    "framer-motion": "^11.0.3"
+    "@react-aria/focus": "^3.20.1",
+    "canvas-confetti": "^1.9.3",
+    "use-sound": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.1",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.18",
-    "eslint": "^9.9.1",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "globals": "^15.9.0",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2",
+    "@eslint/js": "^9.21.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.3.0",
+    "@typescript-eslint/parser": "^8.3.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "size-limit": "^11.2.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0",
     "vite-plugin-dts": "^3.7.3"
   },
   "keywords": [
