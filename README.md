@@ -138,6 +138,32 @@ function App() {
 />
 ```
 
+#### Audio Mode
+```tsx
+<Captcha
+  type="mixed"
+  length={6}
+  enableAudio
+  onValidate={(isValid) => console.log('Valid:', isValid)}
+  validationRules={{
+    required: true
+  }}
+/>
+```
+
+#### Max Attempts
+```tsx
+<Captcha
+  type="mixed"
+  length={6}
+  maxAttempts={3} 
+  onValidate={(isValid) => console.log('Valid:', isValid)}
+  validationRules={{
+    required: true
+  }}
+/>
+```
+
 #### Complex Validation
 ```tsx
 <Captcha

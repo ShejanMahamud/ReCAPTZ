@@ -1,12 +1,12 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CaptchaContextType, CaptchaProps, ValidationRules } from '../types';
-import { generateCaptcha, validateCaptcha } from '../utils/captchaGenerator';
+import React, { createContext, useCallback, useContext, useState } from "react";
+import { CaptchaContextType, CaptchaProps, ValidationRules } from "../types";
+import { generateCaptcha, validateCaptcha } from "../utils/captchaGenerator";
 
 const CaptchaContext = createContext<CaptchaContextType | null>(null);
 
 export const CaptchaProvider: React.FC<{
   children: React.ReactNode;
-  type?: CaptchaProps['type'];
+  type?: CaptchaProps["type"];
   length?: number;
   caseSensitive?: boolean;
   customCharacters?: string;
@@ -15,18 +15,18 @@ export const CaptchaProvider: React.FC<{
   maxAttempts: number | undefined;
 }> = ({
   children,
-  type = 'mixed',
+  type = "mixed",
   length = 6,
   caseSensitive = false,
   customCharacters,
   validationRules,
   onValidate,
-  maxAttempts
+  maxAttempts,
 }) => {
   const [captchaText, setCaptchaText] = useState(() =>
     generateCaptcha(type, length, customCharacters)
   );
-  const [userInput, setUserInput] = useState('');
+  const [userInput, setUserInput] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
@@ -34,7 +34,7 @@ export const CaptchaProvider: React.FC<{
   const refresh = useCallback(() => {
     const newCaptcha = generateCaptcha(type, length, customCharacters);
     setCaptchaText(newCaptcha);
-    setUserInput('');
+    setUserInput("");
     setIsValid(false);
     setError(null);
     setAttempts(0);
@@ -53,15 +53,30 @@ export const CaptchaProvider: React.FC<{
       maxLength: length,
     };
 
-    const { isValid: valid, error: validationError } = validateCaptcha(userInput, captchaText, rules);
+    const { isValid: valid, error: validationError } = validateCaptcha(
+      userInput,
+      captchaText,
+      rules
+    );
     setIsValid(valid);
     setError(validationError);
     if (!valid) {
-      setAttempts(prev => prev + 1); // Increment attempts on invalid input
+      setAttempts((prev) => prev + 1); // Increment attempts on invalid input
     }
     onValidate?.(valid);
     return valid;
-  }, [userInput, captchaText, caseSensitive, customCharacters, length, validationRules, onValidate,attempts, maxAttempts, refresh]);
+  }, [
+    userInput,
+    captchaText,
+    caseSensitive,
+    customCharacters,
+    length,
+    validationRules,
+    onValidate,
+    attempts,
+    maxAttempts,
+    refresh,
+  ]);
 
   return (
     <CaptchaContext.Provider
@@ -85,7 +100,7 @@ export const CaptchaProvider: React.FC<{
 export const useCaptcha = () => {
   const context = useContext(CaptchaContext);
   if (!context) {
-    throw new Error('useCaptcha must be used within a CaptchaProvider');
+    throw new Error("useCaptcha must be used within a CaptchaProvider");
   }
   return context;
 };
