@@ -5,6 +5,8 @@ import { CaptchaProvider, useCaptcha } from "../context/CaptchaContext";
 import { CaptchaProps } from "../types";
 import { CaptchaCanvas } from "./CaptchaCanvas";
 import { CaptchaInput } from "./CaptchaInput";
+import { CaptchaSuccess } from "./CaptchaSuccess";
+import { CaptchaTimer } from "./CaptchaTimer";
 
 const CaptchaContent: React.FC<CaptchaProps> = ({
   onChange,
@@ -13,12 +15,15 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   refreshable = true,
   darkMode = false,
   enableAudio = true,
+  showSuccessAnimation = true,
+  refreshInterval = 0,
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
-  const { captchaText, refresh } = useCaptcha();
+  const { captchaText, refresh, isValid,setUserInput } = useCaptcha();
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+  const [showSuccess, setShowSuccess] = useState(false); 
   const handleRefresh = () => {
+    setUserInput('');
     setIsRefreshing(true);
     refresh();
     setTimeout(() => setIsRefreshing(false), 500);
@@ -45,6 +50,13 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  React.useEffect(() => {
+    if (isValid) {
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }
+  }, [isValid]);
 
   return (
     <div
@@ -92,7 +104,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           )}
         </div>
       </div>
-
+      {showSuccessAnimation && showSuccess && <CaptchaSuccess darkMode={darkMode} />}
       <div
         className={`rounded-lg border shadow-sm ${
           darkMode
@@ -113,6 +125,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
             <CaptchaCanvas darkMode={darkMode} height={60} />
           </div>
         </div>
+        {refreshInterval > 0 && <CaptchaTimer duration={refreshInterval} darkMode={darkMode} onExpire={() => refresh()} />}
         <div
             className={`${isFocusVisible ? 'border-2 border-blue-500 p-3' : 'p-3'}`}
           >

@@ -203,6 +203,8 @@ function App() {
                   type="numbers"
                   length={4}
                   refreshable
+                  // refreshInterval={30}
+                  showSuccessAnimation
                   maxAttempts={2}
                   onValidate={setNumberValid}
                   validationRules={{
