@@ -14,6 +14,7 @@ export interface ValidationRules {
 export interface CaptchaProps {
   type?: CaptchaType;
   length?: number;
+  inputButtonStyle?: string;
   onChange?: (value: string) => void;
   onValidate?: (isValid: boolean) => void;
   onSuccess?: () => void;

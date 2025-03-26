@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
-import { RefreshCw, KeyRound, Volume2 } from 'lucide-react';
-import { useFocusRing } from '@react-aria/focus';
-import useSound from 'use-sound';
-import { CaptchaProps } from '../types';
-import { CaptchaProvider, useCaptcha } from '../context/CaptchaContext';
-import { CaptchaInput } from './CaptchaInput';
-import { CaptchaCanvas } from './CaptchaCanvas';
+import { useFocusRing } from "@react-aria/focus";
+import { KeyRound, RefreshCw, Volume2 } from "lucide-react";
+import React, { useState } from "react";
+import useSound from "use-sound";
+import { CaptchaProvider, useCaptcha } from "../context/CaptchaContext";
+import { CaptchaProps } from "../types";
+import { CaptchaCanvas } from "./CaptchaCanvas";
+import { CaptchaInput } from "./CaptchaInput";
 
 const CaptchaContent: React.FC<CaptchaProps> = ({
   onChange,
-  className = '',
+  className = "",
+  inputButtonStyle = "",
   refreshable = true,
-  darkMode = false
+  darkMode = false,
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
   const { captchaText, refresh } = useCaptcha();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  const [playSuccess] = useSound('/success.mp3', { volume: 0.5 });
-  const [playError] = useSound('/error.mp3', { volume: 0.5 });
+
+  const [playSuccess] = useSound("/success.mp3", { volume: 0.5 });
+  const [playError] = useSound("/error.mp3", { volume: 0.5 });
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -27,17 +28,18 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   };
 
   const speakCaptcha = () => {
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance();
-      utterance.text = Array.from(captchaText).join(' ');
+      utterance.text = Array.from(captchaText).join(" ");
       utterance.rate = 0.7;
       utterance.pitch = 1;
       utterance.volume = 1;
 
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => 
-        voice.name.includes('Google') || voice.name.includes('English')
+      const preferredVoice = voices.find(
+        (voice) =>
+          voice.name.includes("Google") || voice.name.includes("English")
       );
       if (preferredVoice) {
         utterance.voice = preferredVoice;
@@ -48,9 +50,9 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`w-full max-w-md transition-all duration-200
-        ${darkMode ? 'text-white' : 'text-gray-900'}
+        ${darkMode ? "text-white" : "text-gray-900"}
         ${className}`}
       {...focusProps}
     >
@@ -63,9 +65,11 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           <button
             onClick={speakCaptcha}
             className={`p-1.5 rounded-md transition-colors
-              ${darkMode 
-                ? 'hover:bg-gray-800 active:bg-gray-700' 
-                : 'hover:bg-gray-100 active:bg-gray-200'}`}
+              ${
+                darkMode
+                  ? "hover:bg-gray-800 active:bg-gray-700"
+                  : "hover:bg-gray-100 active:bg-gray-200"
+              }`}
             aria-label="Listen to CAPTCHA"
           >
             <Volume2 className="w-3.5 h-3.5" />
@@ -75,10 +79,12 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
               onClick={handleRefresh}
               disabled={isRefreshing}
               className={`p-1.5 rounded-md transition-colors
-                ${darkMode 
-                  ? 'hover:bg-gray-800 active:bg-gray-700' 
-                  : 'hover:bg-gray-100 active:bg-gray-200'}
-                ${isRefreshing ? 'animate-spin' : ''}`}
+                ${
+                  darkMode
+                    ? "hover:bg-gray-800 active:bg-gray-700"
+                    : "hover:bg-gray-100 active:bg-gray-200"
+                }
+                ${isRefreshing ? "animate-spin" : ""}`}
               aria-label="Refresh CAPTCHA"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -87,22 +93,40 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         </div>
       </div>
 
-      <div className={`rounded-lg border shadow-sm ${
-        darkMode 
-          ? 'border-gray-700 bg-gray-900 shadow-gray-900/50' 
-          : 'border-gray-200 bg-white'
-      }`}>
-        <div className={`p-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          <div className={`transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
+      <div
+        className={`rounded-lg border shadow-sm ${
+          darkMode
+            ? "border-gray-700 bg-gray-900 shadow-gray-900/50"
+            : "border-gray-200 bg-white"
+        }`}
+      >
+        <div
+          className={`p-3 border-b ${
+            darkMode ? "border-gray-700" : "border-gray-200"
+          }`}
+        >
+          <div
+            className={`transition-opacity duration-300 ${
+              isRefreshing ? "opacity-50" : "opacity-100"
+            }`}
+          >
             <CaptchaCanvas darkMode={darkMode} height={60} />
           </div>
         </div>
         <div className="p-3">
-          <CaptchaInput onChange={onChange} darkMode={darkMode} />
+          <CaptchaInput
+            onChange={onChange}
+            darkMode={darkMode}
+            className={inputButtonStyle}
+          />
         </div>
       </div>
 
-      <div className={`mt-1.5 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+      <div
+        className={`mt-1.5 text-xs ${
+          darkMode ? "text-gray-400" : "text-gray-500"
+        }`}
+      >
         Press Space to hear the code • Enter to validate • Esc to clear
       </div>
     </div>

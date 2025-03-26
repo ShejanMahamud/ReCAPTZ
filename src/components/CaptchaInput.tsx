@@ -3,11 +3,13 @@ import { AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useCaptcha } from '../context/CaptchaContext';
 
 interface CaptchaInputProps {
+  className?: string;
   onChange?: (value: string) => void;
   darkMode?: boolean;
 }
 
 export const CaptchaInput: React.FC<CaptchaInputProps> = ({ 
+  className,
   onChange,
   darkMode = false
 }) => {
@@ -89,7 +91,7 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
                   : 'border-gray-200 bg-white focus:border-blue-400'
             }
             ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'}
-            focus:outline-none focus:ring-2 focus:ring-offset-0 border`}
+            focus:outline-hidden focus:ring-2 focus:ring-offset-0 border`}
           placeholder="Enter the code above"
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -111,8 +113,8 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
 
       <button
         onClick={validate}
-        className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium
-          transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0
+        className={`${className} w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium
+          transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-0
           ${darkMode
             ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500/30 text-white'
             : 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-200'
