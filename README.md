@@ -268,6 +268,7 @@ function LoginForm() {
 | `refreshInterval` | `number` | - | Auto-refresh interval in seconds |
 | `maxAttempts` | `number` | - | Maximum validation attempts |
 | `inputButtonStyle` | `string` | - | Custom class for input button styles |
+| `enableAudio` | `boolean` | - | Enable or disable audio support |
 
 ## Validation Rules
 

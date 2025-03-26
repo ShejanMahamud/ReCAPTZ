@@ -202,6 +202,8 @@ function App() {
                 <Captcha
                   type="numbers"
                   length={4}
+                  refreshable
+                  maxAttempts={2}
                   onValidate={setNumberValid}
                   validationRules={{
                     required: true,

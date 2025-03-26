@@ -9,9 +9,11 @@ export interface ValidationRules {
   required?: boolean;
   caseSensitive?: boolean;
   customValidator?: (value: string) => boolean | string;
+ 
 }
 
 export interface CaptchaProps {
+  enableAudio?: boolean;
   type?: CaptchaType;
   length?: number;
   inputButtonStyle?: string;

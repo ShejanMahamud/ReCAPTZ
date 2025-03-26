@@ -1,7 +1,6 @@
 import { useFocusRing } from "@react-aria/focus";
 import { KeyRound, RefreshCw, Volume2 } from "lucide-react";
 import React, { useState } from "react";
-import useSound from "use-sound";
 import { CaptchaProvider, useCaptcha } from "../context/CaptchaContext";
 import { CaptchaProps } from "../types";
 import { CaptchaCanvas } from "./CaptchaCanvas";
@@ -13,13 +12,11 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   inputButtonStyle = "",
   refreshable = true,
   darkMode = false,
+  enableAudio = true,
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
   const { captchaText, refresh } = useCaptcha();
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const [playSuccess] = useSound("/success.mp3", { volume: 0.5 });
-  const [playError] = useSound("/error.mp3", { volume: 0.5 });
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -62,18 +59,21 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           <span className="text-sm font-medium">Security Check</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={speakCaptcha}
-            className={`p-1.5 rounded-md transition-colors
+          {enableAudio && (
+            <button
+              onClick={speakCaptcha}
+              className={`p-1.5 rounded-md transition-colors
               ${
                 darkMode
                   ? "hover:bg-gray-800 active:bg-gray-700"
                   : "hover:bg-gray-100 active:bg-gray-200"
               }`}
-            aria-label="Listen to CAPTCHA"
-          >
-            <Volume2 className="w-3.5 h-3.5" />
-          </button>
+              aria-label="Listen to CAPTCHA"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           {refreshable && (
             <button
               onClick={handleRefresh}
@@ -108,18 +108,20 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           <div
             className={`transition-opacity duration-300 ${
               isRefreshing ? "opacity-50" : "opacity-100"
-            }`}
+            } ${isFocusVisible ? 'border-2 border-blue-500' : ''}`}
           >
             <CaptchaCanvas darkMode={darkMode} height={60} />
           </div>
         </div>
-        <div className="p-3">
-          <CaptchaInput
-            onChange={onChange}
-            darkMode={darkMode}
-            className={inputButtonStyle}
-          />
-        </div>
+        <div
+            className={`${isFocusVisible ? 'border-2 border-blue-500 p-3' : 'p-3'}`}
+          >
+            <CaptchaInput
+              onChange={onChange}
+              darkMode={darkMode}
+              className={inputButtonStyle}
+            />
+          </div>
       </div>
 
       <div
@@ -127,7 +129,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           darkMode ? "text-gray-400" : "text-gray-500"
         }`}
       >
-        Press Space to hear the code • Enter to validate • Esc to clear
+        {enableAudio && " Press Space to hear the code •"} Enter to validate •
+        Esc to clear
       </div>
     </div>
   );
@@ -136,12 +139,14 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
 export const Captcha: React.FC<CaptchaProps> = (props) => {
   return (
     <CaptchaProvider
+    
       type={props.type}
       length={props.length}
       caseSensitive={props.caseSensitive}
       customCharacters={props.customCharacters}
       validationRules={props.validationRules}
       onValidate={props.onValidate}
+      maxAttempts={props.maxAttempts}
     >
       <CaptchaContent {...props} />
     </CaptchaProvider>

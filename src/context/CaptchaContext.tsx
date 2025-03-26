@@ -12,6 +12,7 @@ export const CaptchaProvider: React.FC<{
   customCharacters?: string;
   validationRules?: ValidationRules;
   onValidate?: (isValid: boolean) => void;
+  maxAttempts: number | undefined;
 }> = ({
   children,
   type = 'mixed',
@@ -19,7 +20,8 @@ export const CaptchaProvider: React.FC<{
   caseSensitive = false,
   customCharacters,
   validationRules,
-  onValidate
+  onValidate,
+  maxAttempts
 }) => {
   const [captchaText, setCaptchaText] = useState(() =>
     generateCaptcha(type, length, customCharacters)
@@ -27,6 +29,7 @@ export const CaptchaProvider: React.FC<{
   const [userInput, setUserInput] = useState('');
   const [isValid, setIsValid] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
 
   const refresh = useCallback(() => {
     const newCaptcha = generateCaptcha(type, length, customCharacters);
@@ -34,9 +37,14 @@ export const CaptchaProvider: React.FC<{
     setUserInput('');
     setIsValid(false);
     setError(null);
+    setAttempts(0);
   }, [type, length, customCharacters]);
 
   const validate = useCallback(() => {
+    if (attempts >= maxAttempts) {
+      refresh(); // Automatically refresh captcha when max attempts are reached
+      return false;
+    }
     const rules: ValidationRules = {
       ...validationRules,
       caseSensitive,
@@ -48,9 +56,12 @@ export const CaptchaProvider: React.FC<{
     const { isValid: valid, error: validationError } = validateCaptcha(userInput, captchaText, rules);
     setIsValid(valid);
     setError(validationError);
+    if (!valid) {
+      setAttempts(prev => prev + 1); // Increment attempts on invalid input
+    }
     onValidate?.(valid);
     return valid;
-  }, [userInput, captchaText, caseSensitive, customCharacters, length, validationRules, onValidate]);
+  }, [userInput, captchaText, caseSensitive, customCharacters, length, validationRules, onValidate,attempts, maxAttempts, refresh]);
 
   return (
     <CaptchaContext.Provider
@@ -61,7 +72,9 @@ export const CaptchaProvider: React.FC<{
         error,
         refresh,
         setUserInput,
-        validate
+        validate,
+        currentAttempts: attempts, // Provide current attempts
+        maxAttempts, // Provide max attempts (now handled by the parent)
       }}
     >
       {children}
