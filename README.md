@@ -1,7 +1,5 @@
 # ReCAPTZ
 
-![ReCAPTZ](https://i.ibb.co.com/QFv55ZmV/Screenshot-2025-03-26-025637.png)
-
 A modern, customizable CAPTCHA component for React applications with TypeScript support. This package provides multiple CAPTCHA types, validation rules, and a beautiful UI out of the box.
 
 ## Features
