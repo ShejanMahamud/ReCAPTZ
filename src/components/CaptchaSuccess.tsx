@@ -5,9 +5,13 @@ import React from "react";
 
 interface CaptchaSuccessProps {
   darkMode?: boolean;
+  i18n?: any;
 }
 
-export const CaptchaSuccess: React.FC<CaptchaSuccessProps> = ({ darkMode }) => {
+export const CaptchaSuccess: React.FC<CaptchaSuccessProps> = ({
+  darkMode,
+  i18n = {},
+}) => {
   React.useEffect(() => {
     confetti({
       particleCount: 100,
@@ -15,6 +19,8 @@ export const CaptchaSuccess: React.FC<CaptchaSuccessProps> = ({ darkMode }) => {
       origin: { y: 0.6 },
     });
   }, []);
+
+  const message = i18n.verificationSuccessful || "Verification Successful!";
 
   return (
     <motion.div
@@ -42,7 +48,7 @@ export const CaptchaSuccess: React.FC<CaptchaSuccessProps> = ({ darkMode }) => {
           darkMode ? "text-green-400" : "text-green-600"
         }`}
       >
-        Verification Successful!
+        {message}
       </motion.p>
     </motion.div>
   );

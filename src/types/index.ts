@@ -1,6 +1,6 @@
-export type CaptchaType = 'numbers' | 'letters' | 'mixed';
+export type CaptchaType = "numbers" | "letters" | "mixed";
 
-export type CaptchaTheme = 'light' | 'dark' | 'auto';
+export type CaptchaTheme = "light" | "dark" | "auto";
 
 export interface ValidationRules {
   minLength?: number;
@@ -9,7 +9,27 @@ export interface ValidationRules {
   required?: boolean;
   caseSensitive?: boolean;
   customValidator?: (value: string) => boolean | string;
- 
+}
+
+export interface CaptchaI18n {
+  securityCheck?: string;
+  listenToCaptcha?: string;
+  refreshCaptcha?: string;
+  inputPlaceholder?: string;
+  pressSpaceToHearCode?: string;
+  enterToValidate?: string;
+  escToClear?: string;
+  verifyButton?: string;
+  verificationSuccessful?: string;
+  attemptsRemaining?: (remaining: number) => string;
+  timerSeconds?: (seconds: number) => string;
+  // Validation errors
+  captchaRequired?: string;
+  minLength?: (min: number) => string;
+  maxLength?: (max: number) => string;
+  invalidCharacters?: (chars: string) => string;
+  customValidationFailed?: string;
+  captchaDoesNotMatch?: string;
 }
 
 export interface CaptchaProps {
@@ -21,6 +41,9 @@ export interface CaptchaProps {
   onValidate?: (isValid: boolean) => void;
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  onFail?: () => void;
+  onRefresh?: () => void;
+  onAudioPlay?: () => void;
   className?: string;
   refreshable?: boolean;
   caseSensitive?: boolean;
@@ -37,4 +60,7 @@ export interface CaptchaProps {
   loadingComponent?: React.ReactNode;
   successComponent?: React.ReactNode;
   errorComponent?: React.ReactNode;
+  i18n?: CaptchaI18n;
+  /** Enable right-to-left layout for RTL languages */
+  rtl?: boolean;
 }

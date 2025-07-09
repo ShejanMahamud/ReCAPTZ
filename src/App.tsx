@@ -523,6 +523,70 @@ function App() {
           </div>
         </div>
 
+        <div className="space-y-8 mt-16">
+          <h3 className="text-2xl font-semibold mb-6 text-center">
+            Localization Demos
+          </h3>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-white/80 p-8 rounded-2xl shadow-xl border border-blue-100">
+              <h4 className="text-lg font-semibold mb-4">German (Deutsch)</h4>
+              <Captcha
+                type="mixed"
+                length={6}
+                i18n={{
+                  securityCheck: "Sicherheitsüberprüfung",
+                  listenToCaptcha: "CAPTCHA anhören",
+                  refreshCaptcha: "CAPTCHA neu laden",
+                  inputPlaceholder: "Code eingeben",
+                  pressSpaceToHearCode: "Leertaste: Code anhören",
+                  enterToValidate: "Enter: Prüfen",
+                  escToClear: "Esc: Löschen",
+                  verifyButton: "Prüfen",
+                  verificationSuccessful: "Erfolg!",
+                  attemptsRemaining: (n) => `${n} Versuche übrig`,
+                  captchaRequired: "Bitte CAPTCHA eingeben",
+                  minLength: (min) => `Mindestens ${min} Zeichen`,
+                  maxLength: (max) => `Maximal ${max} Zeichen`,
+                  invalidCharacters: (chars) => `Ungültige Zeichen: ${chars}`,
+                  customValidationFailed:
+                    "Benutzerdefinierte Validierung fehlgeschlagen",
+                  captchaDoesNotMatch: "CAPTCHA stimmt nicht überein",
+                }}
+                showSuccessAnimation
+                refreshable
+              />
+            </div>
+            <div className="bg-white/80 p-8 rounded-2xl shadow-xl border border-green-100">
+              <h4 className="text-lg font-semibold mb-4">Spanish (Español)</h4>
+              <Captcha
+                type="letters"
+                length={5}
+                i18n={{
+                  securityCheck: "Verificación de seguridad",
+                  listenToCaptcha: "Escuchar CAPTCHA",
+                  refreshCaptcha: "Actualizar CAPTCHA",
+                  inputPlaceholder: "Ingrese el código",
+                  pressSpaceToHearCode: "Espacio: escuchar el código",
+                  enterToValidate: "Enter: validar",
+                  escToClear: "Esc: limpiar",
+                  verifyButton: "Verificar",
+                  verificationSuccessful: "¡Éxito!",
+                  attemptsRemaining: (n) => `${n} intentos restantes`,
+                  captchaRequired: "Por favor ingrese el CAPTCHA",
+                  minLength: (min) => `Mínimo ${min} caracteres`,
+                  maxLength: (max) => `Máximo ${max} caracteres`,
+                  invalidCharacters: (chars) =>
+                    `Caracteres inválidos: ${chars}`,
+                  customValidationFailed: "Validación personalizada fallida",
+                  captchaDoesNotMatch: "El CAPTCHA no coincide",
+                }}
+                showSuccessAnimation
+                refreshable
+              />
+            </div>
+          </div>
+        </div>
+
         <div
           id="documentation"
           className="bg-white rounded-2xl shadow-xl p-8 mb-16"

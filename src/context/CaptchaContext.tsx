@@ -13,6 +13,8 @@ export const CaptchaProvider: React.FC<{
   validationRules?: ValidationRules;
   onValidate?: (isValid: boolean) => void;
   maxAttempts: number | undefined;
+  i18n?: any;
+  onFail?: () => void;
 }> = ({
   children,
   type = "mixed",
@@ -22,6 +24,8 @@ export const CaptchaProvider: React.FC<{
   validationRules,
   onValidate,
   maxAttempts,
+  i18n = {},
+  onFail,
 }) => {
   const [captchaText, setCaptchaText] = useState(() =>
     generateCaptcha(type, length, customCharacters)
@@ -56,12 +60,14 @@ export const CaptchaProvider: React.FC<{
     const { isValid: valid, error: validationError } = validateCaptcha(
       userInput,
       captchaText,
-      rules
+      rules,
+      i18n
     );
     setIsValid(valid);
     setError(validationError);
     if (!valid) {
       setAttempts((prev) => prev + 1); // Increment attempts on invalid input
+      if (onFail) onFail();
     }
     onValidate?.(valid);
     return valid;
@@ -76,6 +82,8 @@ export const CaptchaProvider: React.FC<{
     attempts,
     maxAttempts,
     refresh,
+    i18n,
+    onFail,
   ]);
 
   return (
@@ -90,6 +98,7 @@ export const CaptchaProvider: React.FC<{
         validate,
         currentAttempts: attempts, // Provide current attempts
         maxAttempts, // Provide max attempts (now handled by the parent)
+        i18n,
       }}
     >
       {children}

@@ -28,67 +28,143 @@ npm install recaptz
 ## Quick Start
 
 ```tsx
-import { Captcha } from 'recaptz';
+import { Captcha } from "recaptz";
 
 function App() {
   const handleValidate = (isValid: boolean) => {
     if (isValid) {
-      console.log('CAPTCHA validated successfully');
+      console.log("CAPTCHA validated successfully");
     }
   };
 
-  return (
-    <Captcha
-      type="mixed"
-      length={6}
-      onValidate={handleValidate}
-    />
-  );
+  return <Captcha type="mixed" length={6} onValidate={handleValidate} />;
 }
 ```
+
+## Localization (i18n)
+
+You can localize all user-facing strings by passing the `i18n` prop to the `Captcha` component. Provide only the keys you want to override; all others will use English defaults.
+
+### Example: Arabic (RTL)
+
+```tsx
+<Captcha
+  rtl
+  i18n={{
+    securityCheck: "التحقق الأمني",
+    listenToCaptcha: "استمع إلى كابتشا",
+    refreshCaptcha: "تحديث كابتشا",
+    inputPlaceholder: "أدخل الرمز أعلاه",
+    pressSpaceToHearCode: "اضغط المسافة لسماع الرمز",
+    enterToValidate: "إنتر: تحقق",
+    escToClear: "إسك: مسح",
+    verifyButton: "تحقق",
+    verificationSuccessful: "تم التحقق!",
+    attemptsRemaining: (n) => `المحاولات المتبقية: ${n}`,
+    captchaRequired: "يرجى إدخال كابتشا",
+    minLength: (min) => `الحد الأدنى ${min} أحرف`,
+    maxLength: (max) => `الحد الأقصى ${max} أحرف`,
+    invalidCharacters: (chars) => `أحرف غير صالحة: ${chars}`,
+    customValidationFailed: "فشل التحقق المخصص",
+    captchaDoesNotMatch: "كابتشا غير متطابقة",
+  }}
+/>
+```
+
+> **Note:** The `rtl` prop is only needed for right-to-left languages. The package includes built-in CSS for RTL support.
+
+### Example: German (LTR)
+
+```tsx
+<Captcha
+  i18n={{
+    securityCheck: "Sicherheitsüberprüfung",
+    listenToCaptcha: "CAPTCHA anhören",
+    refreshCaptcha: "CAPTCHA neu laden",
+    inputPlaceholder: "Code eingeben",
+    pressSpaceToHearCode: "Leertaste: Code anhören",
+    enterToValidate: "Enter: Prüfen",
+    escToClear: "Esc: Löschen",
+    verifyButton: "Prüfen",
+    verificationSuccessful: "Erfolg!",
+    attemptsRemaining: (n) => `${n} Versuche übrig`,
+    captchaRequired: "Bitte CAPTCHA eingeben",
+    minLength: (min) => `Mindestens ${min} Zeichen`,
+    maxLength: (max) => `Maximal ${max} Zeichen`,
+    invalidCharacters: (chars) => `Ungültige Zeichen: ${chars}`,
+    customValidationFailed: "Benutzerdefinierte Validierung fehlgeschlagen",
+    captchaDoesNotMatch: "CAPTCHA stimmt nicht überein",
+  }}
+/>
+```
+
+### i18n Keys
+
+| Key                      | Type                      | Default (English)                              | Description               |
+| ------------------------ | ------------------------- | ---------------------------------------------- | ------------------------- |
+| `securityCheck`          | string                    | "Security Check"                               | Section label             |
+| `listenToCaptcha`        | string                    | "Listen to CAPTCHA"                            | Audio button aria-label   |
+| `refreshCaptcha`         | string                    | "Refresh CAPTCHA"                              | Refresh button aria-label |
+| `inputPlaceholder`       | string                    | "Enter the code above"                         | Input placeholder         |
+| `pressSpaceToHearCode`   | string                    | "Press Space to hear the code"                 | Keyboard shortcut hint    |
+| `enterToValidate`        | string                    | "Enter to validate"                            | Keyboard shortcut hint    |
+| `escToClear`             | string                    | "Esc to clear"                                 | Keyboard shortcut hint    |
+| `verifyButton`           | string                    | "Verify"                                       | Button text               |
+| `verificationSuccessful` | string                    | "Verification successful"                      | Success message           |
+| `attemptsRemaining`      | (n: number) => string     | "{n} attempts remaining"                       | Attempts left message     |
+| `captchaRequired`        | string                    | "CAPTCHA response is required"                 | Required error            |
+| `minLength`              | (min: number) => string   | "Input must be at least {min} characters long" | Min length error          |
+| `maxLength`              | (max: number) => string   | "Input cannot be longer than {max} characters" | Max length error          |
+| `invalidCharacters`      | (chars: string) => string | "Invalid characters found: {chars}"            | Invalid chars error       |
+| `customValidationFailed` | string                    | "Custom validation failed"                     | Custom validation error   |
+| `captchaDoesNotMatch`    | string                    | "CAPTCHA does not match"                       | Mismatch error            |
 
 ## Examples
 
 ### Basic Types
 
 #### Numbers Only
+
 ```tsx
 <Captcha
   type="numbers"
   length={4}
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
     required: true,
-    allowedCharacters: '0123456789',
+    allowedCharacters: "0123456789",
     minLength: 4,
-    maxLength: 4
+    maxLength: 4,
   }}
 />
 ```
 
 #### Letters Only
+
 ```tsx
 <Captcha
   type="letters"
   length={6}
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
     required: true,
-    customValidator: (value) => /^[a-zA-Z]+$/.test(value) || 'Only letters are allowed'
+    customValidator: (value) =>
+      /^[a-zA-Z]+$/.test(value) || "Only letters are allowed",
   }}
 />
 ```
 
 #### Mixed Characters
+
 ```tsx
 <Captcha
   type="mixed"
   length={8}
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
     required: true,
     minLength: 8,
-    maxLength: 8
+    maxLength: 8,
   }}
 />
 ```
@@ -96,79 +172,112 @@ function App() {
 ### Advanced Features
 
 #### Timed CAPTCHA
+
 ```tsx
 <Captcha
   type="mixed"
   length={5}
   refreshInterval={30} // Refreshes every 30 seconds
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
     required: true,
-    minLength: 5
+    minLength: 5,
   }}
 />
 ```
 
 #### Accessible CAPTCHA
+
 ```tsx
 <Captcha
   type="letters"
   length={4}
   autoFocus
   showSuccessAnimation
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
-    required: true
+    required: true,
   }}
 />
 ```
 
 #### Dark Mode
+
 ```tsx
 <Captcha
   type="mixed"
   length={6}
   darkMode
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
-    required: true
+    required: true,
   }}
 />
 ```
 
 #### Audio Mode
+
 ```tsx
 <Captcha
   type="mixed"
   length={6}
   enableAudio
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
-    required: true
+    required: true,
   }}
 />
 ```
 
 #### Max Attempts
+
 ```tsx
 <Captcha
   type="mixed"
   length={6}
-  maxAttempts={3} 
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  maxAttempts={3}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
-    required: true
+    required: true,
   }}
 />
 ```
 
+## Analytics / Telemetry Hooks
+
+You can track user interactions and events for analytics or logging by using the following props:
+
+- `onFail`: Called whenever the user fails validation.
+- `onRefresh`: Called whenever the CAPTCHA is refreshed.
+- `onAudioPlay`: Called whenever the audio is played.
+
+### Example
+
+```tsx
+<Captcha
+  onFail={() => console.log("CAPTCHA failed")}
+  onRefresh={() => console.log("CAPTCHA refreshed")}
+  onAudioPlay={() => console.log("CAPTCHA audio played")}
+/>
+```
+
+### Prop Signatures
+
+| Prop          | Type         | Description                           |
+| ------------- | ------------ | ------------------------------------- |
+| `onFail`      | `() => void` | Called when the user fails validation |
+| `onRefresh`   | `() => void` | Called when the CAPTCHA is refreshed  |
+| `onAudioPlay` | `() => void` | Called when the audio is played       |
+
+
 #### Complex Validation
+
 ```tsx
 <Captcha
   customCharacters="ABCDEF123456"
   length={6}
   caseSensitive={true}
-  onValidate={(isValid) => console.log('Valid:', isValid)}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
   validationRules={{
     required: true,
     allowedCharacters: "ABCDEF123456",
@@ -176,11 +285,11 @@ function App() {
       const hasLetter = /[A-F]/.test(value);
       const hasNumber = /[1-6]/.test(value);
       const hasMinLength = value.length >= 6;
-      if (!hasLetter) return 'Must contain at least one letter';
-      if (!hasNumber) return 'Must contain at least one number';
-      if (!hasMinLength) return 'Must be 6 characters long';
+      if (!hasLetter) return "Must contain at least one letter";
+      if (!hasNumber) return "Must contain at least one number";
+      if (!hasMinLength) return "Must be 6 characters long";
       return true;
-    }
+    },
   }}
 />
 ```
@@ -188,13 +297,14 @@ function App() {
 ### Styling
 
 #### Custom Classes and Styles
+
 ```tsx
 <Captcha
   className="my-custom-class"
   customStyles={{
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-    padding: '20px'
+    backgroundColor: "#f8f9fa",
+    borderRadius: "8px",
+    padding: "20px",
   }}
   darkMode={true}
 />
@@ -203,9 +313,10 @@ function App() {
 ### Form Integration
 
 #### React Hook Form
+
 ```tsx
-import { useForm } from 'react-hook-form';
-import { Captcha } from 'recaptz';
+import { useForm } from "react-hook-form";
+import { Captcha } from "recaptz";
 
 function LoginForm() {
   const { handleSubmit, setError, clearErrors } = useForm();
@@ -213,9 +324,9 @@ function LoginForm() {
 
   const onSubmit = (data) => {
     if (!isCaptchaValid) {
-      setError('captcha', {
-        type: 'manual',
-        message: 'Please complete the CAPTCHA'
+      setError("captcha", {
+        type: "manual",
+        message: "Please complete the CAPTCHA",
       });
       return;
     }
@@ -230,7 +341,7 @@ function LoginForm() {
         length={6}
         onValidate={(isValid) => {
           setIsCaptchaValid(isValid);
-          if (isValid) clearErrors('captcha');
+          if (isValid) clearErrors("captcha");
         }}
       />
       <button type="submit">Submit</button>
@@ -240,9 +351,10 @@ function LoginForm() {
 ```
 
 #### Formik
+
 ```tsx
-import { Formik, Form } from 'formik';
-import { Captcha } from 'recaptz';
+import { Formik, Form } from "formik";
+import { Captcha } from "recaptz";
 
 function LoginForm() {
   return (
@@ -261,7 +373,7 @@ function LoginForm() {
             type="mixed"
             length={6}
             onValidate={(isValid) => {
-              setFieldValue('captchaValid', isValid);
+              setFieldValue("captchaValid", isValid);
             }}
           />
           <button type="submit">Submit</button>
@@ -274,25 +386,26 @@ function LoginForm() {
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `type` | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate |
-| `length` | `number` | `6` | Length of CAPTCHA text |
-| `onChange` | `(value: string) => void` | - | Callback when input changes |
-| `onValidate` | `(isValid: boolean) => void` | - | Callback when validation occurs |
-| `className` | `string` | `''` | Additional CSS classes |
-| `refreshable` | `boolean` | `true` | Whether CAPTCHA can be refreshed |
-| `caseSensitive` | `boolean` | `false` | Case-sensitive validation |
-| `customCharacters` | `string` | - | Custom character set |
-| `customStyles` | `React.CSSProperties` | - | Custom inline styles |
-| `validationRules` | `ValidationRules` | - | Custom validation rules |
-| `darkMode` | `boolean` | `false` | Enable dark mode |
-| `autoFocus` | `boolean` | `false` | Auto-focus the input field |
-| `showSuccessAnimation` | `boolean` | `false` | Show success animation |
-| `refreshInterval` | `number` | - | Auto-refresh interval in seconds |
-| `maxAttempts` | `number` | - | Maximum validation attempts |
-| `inputButtonStyle` | `string` | - | Custom class for input button styles |
-| `enableAudio` | `boolean` | - | Enable or disable audio support |
+| Prop                   | Type                                | Default   | Description                                   |
+| ---------------------- | ----------------------------------- | --------- | --------------------------------------------- |
+| `type`                 | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate                   |
+| `length`               | `number`                            | `6`       | Length of CAPTCHA text                        |
+| `onChange`             | `(value: string) => void`           | -         | Callback when input changes                   |
+| `onValidate`           | `(isValid: boolean) => void`        | -         | Callback when validation occurs               |
+| `className`            | `string`                            | `''`      | Additional CSS classes                        |
+| `refreshable`          | `boolean`                           | `true`    | Whether CAPTCHA can be refreshed              |
+| `caseSensitive`        | `boolean`                           | `false`   | Case-sensitive validation                     |
+| `customCharacters`     | `string`                            | -         | Custom character set                          |
+| `customStyles`         | `React.CSSProperties`               | -         | Custom inline styles                          |
+| `validationRules`      | `ValidationRules`                   | -         | Custom validation rules                       |
+| `darkMode`             | `boolean`                           | `false`   | Enable dark mode                              |
+| `autoFocus`            | `boolean`                           | `false`   | Auto-focus the input field                    |
+| `showSuccessAnimation` | `boolean`                           | `false`   | Show success animation                        |
+| `refreshInterval`      | `number`                            | -         | Auto-refresh interval in seconds              |
+| `maxAttempts`          | `number`                            | -         | Maximum validation attempts                   |
+| `inputButtonStyle`     | `string`                            | -         | Custom class for input button styles          |
+| `enableAudio`          | `boolean`                           | -         | Enable or disable audio support               |
+| `rtl`                  | `boolean`                           | `false`   | Enable right-to-left layout for RTL languages |
 
 ## Validation Rules
 
@@ -338,3 +451,4 @@ We welcome contributions! Please feel free to submit a Pull Request.
 ## License
 
 MIT © Shejan Mahamud
+
