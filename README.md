@@ -458,7 +458,7 @@ function LoginForm() {
 | `inputButtonStyle`     | `string`                            | -         | Custom class for input button styles            |
 | `enableAudio`          | `boolean`                           | -         | Enable or disable audio support                 |
 | `rtl`                  | `boolean`                           | `false`   | Enable right-to-left layout for RTL languages   |
-| `showConfetti`         | `boolean`                           | `true`    | Enable or disable confetti animation on success |
+| `showConfetti`         | `boolean`                           | `false`   | Enable or disable confetti animation on success |
 | `confettiOptions`      | `ConfettiOptions`                   | -         | Custom confetti animation options               |
 
 ## Validation Rules
@@ -476,7 +476,7 @@ interface ValidationRules {
 
 ## Confetti Options
 
-You can customize the confetti animation that plays on successful validation:
+You can enable and customize the confetti animation that plays on successful validation. **Note: Confetti is disabled by default** and needs to be explicitly enabled.
 
 ```typescript
 interface ConfettiOptions {
@@ -496,10 +496,20 @@ interface ConfettiOptions {
 
 ### Examples
 
-#### Disable Confetti
+#### Enable Confetti (Default disabled)
 
 ```tsx
-<Captcha showConfetti={false} />
+<Captcha showConfetti={true} />
+```
+
+#### Disable Confetti (Default behavior)
+
+```tsx
+<Captcha showConfetti={false} />;
+{
+  /* or simply omit the prop since it defaults to false */
+}
+<Captcha />;
 ```
 
 #### Custom Confetti

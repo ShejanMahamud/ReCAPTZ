@@ -2,11 +2,11 @@ import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import React from "react";
-import { ConfettiOptions } from "../types";
+import { CaptchaI18n, ConfettiOptions } from "../types";
 
 interface CaptchaSuccessProps {
   darkMode?: boolean;
-  i18n?: any;
+  i18n?: CaptchaI18n;
   showConfetti?: boolean;
   confettiOptions?: ConfettiOptions;
 }
@@ -14,7 +14,7 @@ interface CaptchaSuccessProps {
 export const CaptchaSuccess: React.FC<CaptchaSuccessProps> = ({
   darkMode,
   i18n = {},
-  showConfetti = true,
+  showConfetti = false,
   confettiOptions = {},
 }) => {
   React.useEffect(() => {

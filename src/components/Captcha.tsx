@@ -32,7 +32,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   onRefresh,
   onAudioPlay,
   rtl = false,
-  showConfetti = true,
+  showConfetti = false,
   confettiOptions = {},
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
