@@ -25,6 +25,29 @@ A modern, customizable CAPTCHA component for React applications with TypeScript 
 npm install recaptz
 ```
 
+## React Compatibility
+
+ReCAPTZ supports React 19.0.0+ and is fully compatible with the latest React features:
+
+- ✅ **React 19.1.0**: Full compatibility with latest React internals
+- ✅ **Next.js 15.4.4**: Works seamlessly with latest Next.js
+- ✅ **Concurrent Features**: Compatible with React's concurrent rendering
+- ✅ **Strict Mode**: Works correctly in React Strict Mode
+
+**Minimum Requirements:**
+
+- React ≥ 19.0.0
+- React DOM ≥ 19.0.0
+
+**Peer Dependencies:**
+
+```json
+{
+  "react": ">=19.0.0",
+  "react-dom": ">=19.0.0"
+}
+```
+
 ## Quick Start
 
 ```tsx
@@ -269,7 +292,6 @@ You can track user interactions and events for analytics or logging by using the
 | `onRefresh`   | `() => void` | Called when the CAPTCHA is refreshed  |
 | `onAudioPlay` | `() => void` | Called when the audio is played       |
 
-
 #### Complex Validation
 
 ```tsx
@@ -451,4 +473,3 @@ We welcome contributions! Please feel free to submit a Pull Request.
 ## License
 
 MIT © Shejan Mahamud
-
