@@ -266,6 +266,36 @@ You can localize all user-facing strings by passing the `i18n` prop to the `Capt
 />
 ```
 
+#### Confetti Control
+
+```tsx
+{
+  /* Custom confetti animation */
+}
+<Captcha
+  type="mixed"
+  length={6}
+  showConfetti={true}
+  confettiOptions={{
+    particleCount: 150,
+    spread: 80,
+    colors: ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#ffeaa7"],
+    origin: { y: 0.7 },
+  }}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
+/>;
+
+{
+  /* Disable confetti */
+}
+<Captcha
+  type="mixed"
+  length={6}
+  showConfetti={false}
+  onValidate={(isValid) => console.log("Valid:", isValid)}
+/>;
+```
+
 ## Analytics / Telemetry Hooks
 
 You can track user interactions and events for analytics or logging by using the following props:
@@ -408,26 +438,28 @@ function LoginForm() {
 
 ## Props
 
-| Prop                   | Type                                | Default   | Description                                   |
-| ---------------------- | ----------------------------------- | --------- | --------------------------------------------- |
-| `type`                 | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate                   |
-| `length`               | `number`                            | `6`       | Length of CAPTCHA text                        |
-| `onChange`             | `(value: string) => void`           | -         | Callback when input changes                   |
-| `onValidate`           | `(isValid: boolean) => void`        | -         | Callback when validation occurs               |
-| `className`            | `string`                            | `''`      | Additional CSS classes                        |
-| `refreshable`          | `boolean`                           | `true`    | Whether CAPTCHA can be refreshed              |
-| `caseSensitive`        | `boolean`                           | `false`   | Case-sensitive validation                     |
-| `customCharacters`     | `string`                            | -         | Custom character set                          |
-| `customStyles`         | `React.CSSProperties`               | -         | Custom inline styles                          |
-| `validationRules`      | `ValidationRules`                   | -         | Custom validation rules                       |
-| `darkMode`             | `boolean`                           | `false`   | Enable dark mode                              |
-| `autoFocus`            | `boolean`                           | `false`   | Auto-focus the input field                    |
-| `showSuccessAnimation` | `boolean`                           | `false`   | Show success animation                        |
-| `refreshInterval`      | `number`                            | -         | Auto-refresh interval in seconds              |
-| `maxAttempts`          | `number`                            | -         | Maximum validation attempts                   |
-| `inputButtonStyle`     | `string`                            | -         | Custom class for input button styles          |
-| `enableAudio`          | `boolean`                           | -         | Enable or disable audio support               |
-| `rtl`                  | `boolean`                           | `false`   | Enable right-to-left layout for RTL languages |
+| Prop                   | Type                                | Default   | Description                                     |
+| ---------------------- | ----------------------------------- | --------- | ----------------------------------------------- |
+| `type`                 | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate                     |
+| `length`               | `number`                            | `6`       | Length of CAPTCHA text                          |
+| `onChange`             | `(value: string) => void`           | -         | Callback when input changes                     |
+| `onValidate`           | `(isValid: boolean) => void`        | -         | Callback when validation occurs                 |
+| `className`            | `string`                            | `''`      | Additional CSS classes                          |
+| `refreshable`          | `boolean`                           | `true`    | Whether CAPTCHA can be refreshed                |
+| `caseSensitive`        | `boolean`                           | `false`   | Case-sensitive validation                       |
+| `customCharacters`     | `string`                            | -         | Custom character set                            |
+| `customStyles`         | `React.CSSProperties`               | -         | Custom inline styles                            |
+| `validationRules`      | `ValidationRules`                   | -         | Custom validation rules                         |
+| `darkMode`             | `boolean`                           | `false`   | Enable dark mode                                |
+| `autoFocus`            | `boolean`                           | `false`   | Auto-focus the input field                      |
+| `showSuccessAnimation` | `boolean`                           | `false`   | Show success animation                          |
+| `refreshInterval`      | `number`                            | -         | Auto-refresh interval in seconds                |
+| `maxAttempts`          | `number`                            | -         | Maximum validation attempts                     |
+| `inputButtonStyle`     | `string`                            | -         | Custom class for input button styles            |
+| `enableAudio`          | `boolean`                           | -         | Enable or disable audio support                 |
+| `rtl`                  | `boolean`                           | `false`   | Enable right-to-left layout for RTL languages   |
+| `showConfetti`         | `boolean`                           | `true`    | Enable or disable confetti animation on success |
+| `confettiOptions`      | `ConfettiOptions`                   | -         | Custom confetti animation options               |
 
 ## Validation Rules
 
@@ -440,6 +472,61 @@ interface ValidationRules {
   caseSensitive?: boolean;
   customValidator?: (value: string) => boolean | string;
 }
+```
+
+## Confetti Options
+
+You can customize the confetti animation that plays on successful validation:
+
+```typescript
+interface ConfettiOptions {
+  particleCount?: number; // Number of confetti particles (default: 100)
+  spread?: number; // Spread angle in degrees (default: 70)
+  origin?: {
+    // Origin point for confetti (default: { y: 0.6 })
+    x?: number; // X position (0-1, default: 0.5)
+    y?: number; // Y position (0-1, default: 0.6)
+  };
+  colors?: string[]; // Array of colors (default: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'])
+  gravity?: number; // Gravity effect (default: 1)
+  scalar?: number; // Particle size multiplier (default: 1)
+  duration?: number; // Animation duration in ms (default: 3000)
+}
+```
+
+### Examples
+
+#### Disable Confetti
+
+```tsx
+<Captcha showConfetti={false} />
+```
+
+#### Custom Confetti
+
+```tsx
+<Captcha
+  showConfetti={true}
+  confettiOptions={{
+    particleCount: 200,
+    spread: 90,
+    colors: ["#ff0000", "#00ff00", "#0000ff"],
+    origin: { y: 0.8 },
+  }}
+/>
+```
+
+#### Subtle Confetti
+
+```tsx
+<Captcha
+  confettiOptions={{
+    particleCount: 50,
+    spread: 45,
+    scalar: 0.8,
+    gravity: 0.5,
+  }}
+/>
 ```
 
 ## Keyboard Shortcuts

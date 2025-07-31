@@ -2,23 +2,38 @@ import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import React from "react";
+import { ConfettiOptions } from "../types";
 
 interface CaptchaSuccessProps {
   darkMode?: boolean;
   i18n?: any;
+  showConfetti?: boolean;
+  confettiOptions?: ConfettiOptions;
 }
 
 export const CaptchaSuccess: React.FC<CaptchaSuccessProps> = ({
   darkMode,
   i18n = {},
+  showConfetti = true,
+  confettiOptions = {},
 }) => {
   React.useEffect(() => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
-  }, []);
+    if (showConfetti) {
+      const defaultOptions = {
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
+        gravity: 1,
+        scalar: 1,
+        duration: 3000,
+      };
+
+      const finalOptions = { ...defaultOptions, ...confettiOptions };
+
+      confetti(finalOptions);
+    }
+  }, [showConfetti, confettiOptions]);
 
   const message = i18n.verificationSuccessful || "Verification Successful!";
 

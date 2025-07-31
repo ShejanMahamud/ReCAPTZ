@@ -32,6 +32,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   onRefresh,
   onAudioPlay,
   rtl = false,
+  showConfetti = true,
+  confettiOptions = {},
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
   const { captchaText, refresh, isValid, setUserInput } = useCaptcha();
@@ -128,7 +130,12 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         </div>
       </div>
       {showSuccessAnimation && showSuccess && (
-        <CaptchaSuccess darkMode={darkMode} i18n={i18n} />
+        <CaptchaSuccess
+          darkMode={darkMode}
+          i18n={i18n}
+          showConfetti={showConfetti}
+          confettiOptions={confettiOptions}
+        />
       )}
       <div
         className={`rounded-lg border shadow-sm ${

@@ -21,15 +21,30 @@ export interface CaptchaI18n {
   escToClear?: string;
   verifyButton?: string;
   verificationSuccessful?: string;
-  attemptsRemaining?: (remaining: number) => string;
-  timerSeconds?: (seconds: number) => string;
-  // Validation errors
+  attemptsRemaining?: (n: number) => string;
   captchaRequired?: string;
   minLength?: (min: number) => string;
   maxLength?: (max: number) => string;
   invalidCharacters?: (chars: string) => string;
   customValidationFailed?: string;
   captchaDoesNotMatch?: string;
+}
+
+export interface ConfettiOptions {
+  /** Number of confetti particles */
+  particleCount?: number;
+  /** Spread angle in degrees */
+  spread?: number;
+  /** Origin point for confetti */
+  origin?: { x?: number; y?: number };
+  /** Colors for confetti particles */
+  colors?: string[];
+  /** Whether confetti should fall */
+  gravity?: number;
+  /** Confetti particle size */
+  scalar?: number;
+  /** Animation duration */
+  duration?: number;
 }
 
 export interface CaptchaProps {
@@ -63,4 +78,8 @@ export interface CaptchaProps {
   i18n?: CaptchaI18n;
   /** Enable right-to-left layout for RTL languages */
   rtl?: boolean;
+  /** Enable or disable confetti animation on success */
+  showConfetti?: boolean;
+  /** Custom confetti options */
+  confettiOptions?: ConfettiOptions;
 }
