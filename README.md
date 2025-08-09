@@ -18,12 +18,51 @@ A modern, customizable CAPTCHA component for React applications with TypeScript 
 - 📦 **Zero Dependencies**: Minimal bundle size with no external dependencies
 - 🌐 **Browser Support**: Works in all modern browsers
 - 🔧 **Easy Integration**: Simple API with comprehensive documentation
+- 🪝 **Hooks-based API**: Granular control for edge cases and custom implementations
 
 ## Installation
 
 ```bash
 npm install recaptz
 ```
+
+## Drop-in Usage (30 seconds)
+
+The fastest way to get started - copy and paste this complete example:
+
+```tsx
+import { Captcha } from "recaptz";
+import { useState } from "react";
+
+function App() {
+  const [isVerified, setIsVerified] = useState(false);
+
+  return (
+    <div style={{ padding: "20px" }}>
+      <h2>Security Check</h2>
+      <Captcha
+        onValidate={(isValid) => setIsVerified(isValid)}
+        onSuccess={() => alert("Verified! You can now proceed.")}
+      />
+      {isVerified && (
+        <div style={{ color: "green", marginTop: "10px" }}>
+          ✅ CAPTCHA verified successfully!
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+**That's it!** This gives you a fully functional CAPTCHA with:
+
+- ✨ Beautiful default styling
+- 🔄 Refresh functionality
+- 🎵 Audio support
+- ♿ Full accessibility
+- 📱 Mobile responsive design
 
 ## React Compatibility
 
@@ -435,6 +474,338 @@ function LoginForm() {
   );
 }
 ```
+
+## Hooks-based API for Edge Cases
+
+For advanced use cases where you need granular control over CAPTCHA functionality, ReCAPTZ provides a comprehensive hooks-based API. These hooks allow you to build completely custom CAPTCHA implementations while leveraging the core logic.
+
+### Available Hooks
+
+#### `useCaptchaGenerator`
+
+Hook for generating CAPTCHA text with customizable configuration. Useful when you need just CAPTCHA generation without UI components.
+
+```tsx
+import { useCaptchaGenerator } from "recaptz";
+
+function CustomCaptcha() {
+  const { captchaText, refresh, generateNew } = useCaptchaGenerator({
+    type: "mixed",
+    length: 6,
+    customCharacters: "ABCDEF123456",
+  });
+
+  return (
+    <div>
+      <div>Generated CAPTCHA: {captchaText}</div>
+      <button onClick={refresh}>Refresh</button>
+      <button onClick={() => generateNew({ length: 8 })}>
+        Generate 8-character CAPTCHA
+      </button>
+    </div>
+  );
+}
+```
+
+#### `useCaptchaValidator`
+
+Hook for validating CAPTCHA input with custom rules. Useful for custom validation logic or when building custom UI.
+
+```tsx
+import { useCaptchaValidator } from "recaptz";
+
+function CustomValidator() {
+  const { validate, validateWithRules, error, isValid } = useCaptchaValidator({
+    caseSensitive: true,
+    validationRules: {
+      minLength: 4,
+      customValidator: (value) =>
+        value.includes("A") || "Must contain letter A",
+    },
+  });
+
+  const handleValidation = (input: string, captcha: string) => {
+    const result = validateWithRules(input, captcha);
+    console.log("Validation result:", result);
+  };
+
+  return (
+    <div>
+      <div>Is Valid: {isValid.toString()}</div>
+      {error && <div>Error: {error}</div>}
+    </div>
+  );
+}
+```
+
+#### `useCaptchaAttempts`
+
+Hook for managing CAPTCHA attempts and limits. Useful for implementing custom attempt limiting logic.
+
+```tsx
+import { useCaptchaAttempts } from "recaptz";
+
+function AttemptsManager() {
+  const {
+    attempts,
+    remainingAttempts,
+    isMaxReached,
+    incrementAttempts,
+    resetAttempts,
+  } = useCaptchaAttempts(3);
+
+  return (
+    <div>
+      <div>Attempts: {attempts}/3</div>
+      <div>Remaining: {remainingAttempts}</div>
+      <div>Max Reached: {isMaxReached.toString()}</div>
+      <button onClick={incrementAttempts} disabled={isMaxReached}>
+        Try Again
+      </button>
+      <button onClick={resetAttempts}>Reset</button>
+    </div>
+  );
+}
+```
+
+#### `useCaptchaAudio`
+
+Hook for text-to-speech functionality. Useful for accessibility features in custom implementations.
+
+```tsx
+import { useCaptchaAudio } from "recaptz";
+
+function AudioCaptcha() {
+  const { speak, isSupported, isPlaying, stop } = useCaptchaAudio();
+
+  return (
+    <div>
+      <div>Audio Supported: {isSupported.toString()}</div>
+      <div>Playing: {isPlaying.toString()}</div>
+      <button onClick={() => speak("A B C 1 2 3")} disabled={!isSupported}>
+        Speak CAPTCHA
+      </button>
+      <button onClick={stop} disabled={!isPlaying}>
+        Stop
+      </button>
+    </div>
+  );
+}
+```
+
+#### `useCaptchaState`
+
+Comprehensive hook that combines all CAPTCHA functionality. Useful for building completely custom CAPTCHA implementations.
+
+```tsx
+import { useCaptchaState } from "recaptz";
+
+function FullCustomCaptcha() {
+  const {
+    // Generator state
+    captchaText,
+    refresh,
+
+    // Input state
+    userInput,
+    setUserInput,
+
+    // Validation state
+    isValid,
+    error,
+    validate,
+
+    // Attempts state
+    attempts,
+    remainingAttempts,
+    isMaxReached,
+
+    // Audio functionality
+    speakCaptcha,
+    isAudioSupported,
+
+    // Configuration
+    config,
+    updateConfig,
+  } = useCaptchaState({
+    type: "mixed",
+    length: 6,
+    maxAttempts: 3,
+  });
+
+  return (
+    <div>
+      <div style={{ fontFamily: "monospace", fontSize: "20px" }}>
+        {captchaText}
+      </div>
+      <input
+        value={userInput}
+        onChange={(e) => setUserInput(e.target.value)}
+        placeholder="Enter CAPTCHA"
+      />
+      <button onClick={validate}>Validate</button>
+      <button onClick={refresh}>Refresh</button>
+      {isAudioSupported && <button onClick={speakCaptcha}>🔊 Listen</button>}
+
+      <div>
+        <div>Valid: {isValid.toString()}</div>
+        <div>Attempts: {attempts}</div>
+        <div>Remaining: {remainingAttempts}</div>
+        {error && <div style={{ color: "red" }}>{error}</div>}
+      </div>
+    </div>
+  );
+}
+```
+
+#### `useCaptchaWithInterval`
+
+Hook for creating a CAPTCHA with automatic refresh intervals. Useful for time-sensitive CAPTCHA implementations.
+
+```tsx
+import { useCaptchaWithInterval } from "recaptz";
+
+function TimedCaptcha() {
+  const captchaState = useCaptchaWithInterval({
+    type: "numbers",
+    length: 4,
+    refreshInterval: 30, // Refresh every 30 seconds
+  });
+
+  return (
+    <div>
+      <div>Auto-refreshing CAPTCHA: {captchaState.captchaText}</div>
+      <div>This CAPTCHA refreshes every 30 seconds</div>
+      {/* Use captchaState like useCaptchaState */}
+    </div>
+  );
+}
+```
+
+#### `useCaptchaWithAutoRefresh`
+
+Hook for creating a CAPTCHA that automatically refreshes on failure. Useful for implementing progressive difficulty or security measures.
+
+```tsx
+import { useCaptchaWithAutoRefresh } from "recaptz";
+
+function ProgressiveCaptcha() {
+  const { difficulty, ...captchaState } = useCaptchaWithAutoRefresh({
+    type: "mixed",
+    length: 4,
+    refreshOnFail: true,
+    progressiveDifficulty: true, // Increases difficulty on failure
+  });
+
+  return (
+    <div>
+      <div>Difficulty Level: {difficulty}</div>
+      <div>CAPTCHA: {captchaState.captchaText}</div>
+      <input
+        value={captchaState.userInput}
+        onChange={(e) => captchaState.setUserInput(e.target.value)}
+      />
+      <button onClick={captchaState.validate}>Validate</button>
+      <div>Length: {captchaState.captchaText.length}</div>
+    </div>
+  );
+}
+```
+
+### Hook Types and Interfaces
+
+The hooks-based API provides TypeScript interfaces for all return types:
+
+```typescript
+interface CaptchaConfig {
+  type?: "numbers" | "letters" | "mixed";
+  length?: number;
+  caseSensitive?: boolean;
+  customCharacters?: string;
+  validationRules?: ValidationRules;
+  maxAttempts?: number;
+  i18n?: CaptchaI18n;
+}
+
+interface CaptchaGenerator {
+  captchaText: string;
+  refresh: () => void;
+  generateNew: (config?: Partial<CaptchaConfig>) => string;
+}
+
+interface CaptchaValidator {
+  validate: (input: string, captcha: string) => boolean;
+  validateWithRules: (
+    input: string,
+    captcha: string,
+    rules?: ValidationRules
+  ) => {
+    isValid: boolean;
+    error: string | null;
+  };
+  error: string | null;
+  isValid: boolean;
+}
+
+interface CaptchaAttempts {
+  attempts: number;
+  maxAttempts: number;
+  remainingAttempts: number;
+  isMaxReached: boolean;
+  incrementAttempts: () => void;
+  resetAttempts: () => void;
+}
+
+interface CaptchaAudio {
+  speak: (text: string) => void;
+  isSupported: boolean;
+  isPlaying: boolean;
+  stop: () => void;
+}
+
+interface CaptchaState {
+  // Generator state
+  captchaText: string;
+  refresh: () => void;
+
+  // Input state
+  userInput: string;
+  setUserInput: (input: string) => void;
+
+  // Validation state
+  isValid: boolean;
+  error: string | null;
+  validate: () => boolean;
+
+  // Attempts state
+  attempts: number;
+  maxAttempts: number;
+  remainingAttempts: number;
+  isMaxReached: boolean;
+
+  // Audio functionality
+  speakCaptcha: () => void;
+  isAudioSupported: boolean;
+  isAudioPlaying: boolean;
+
+  // Configuration
+  config: CaptchaConfig;
+  updateConfig: (newConfig: Partial<CaptchaConfig>) => void;
+}
+```
+
+### Use Cases for Hooks-based API
+
+1. **Custom UI Design**: When you need complete control over the visual appearance
+2. **Integration with Existing Form Libraries**: Custom integration beyond standard form libraries
+3. **Multi-step Forms**: Where CAPTCHA is part of a complex workflow
+4. **A/B Testing**: Testing different CAPTCHA implementations
+5. **Progressive Security**: Implementing escalating security measures
+6. **Analytics Integration**: Custom tracking and analytics
+7. **Accessibility Enhancements**: Custom accessibility features beyond the default
+8. **Mobile-specific Implementations**: Custom mobile-optimized interfaces
+9. **Gaming Applications**: CAPTCHA as part of game mechanics
+10. **Enterprise Systems**: Custom validation workflows and security policies
 
 ## Props
 
