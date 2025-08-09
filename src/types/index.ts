@@ -83,3 +83,99 @@ export interface CaptchaProps {
   /** Custom confetti options */
   confettiOptions?: ConfettiOptions;
 }
+
+// Context type for the existing useCaptcha hook
+export interface CaptchaContextType {
+  captchaText: string;
+  userInput: string;
+  isValid: boolean;
+  error: string | null;
+  refresh: () => void;
+  setUserInput: (input: string) => void;
+  validate: () => boolean;
+  currentAttempts: number;
+  maxAttempts: number | undefined;
+  i18n: CaptchaI18n;
+}
+
+// Configuration for hooks-based API
+export interface CaptchaConfig {
+  type?: CaptchaType;
+  length?: number;
+  caseSensitive?: boolean;
+  customCharacters?: string;
+  validationRules?: ValidationRules;
+  maxAttempts?: number;
+  i18n?: CaptchaI18n;
+}
+
+// Return type for useCaptchaGenerator hook
+export interface CaptchaGenerator {
+  captchaText: string;
+  refresh: () => void;
+  generateNew: (config?: Partial<CaptchaConfig>) => string;
+}
+
+// Return type for useCaptchaValidator hook
+export interface CaptchaValidator {
+  validate: (input: string, captcha: string) => boolean;
+  validateWithRules: (
+    input: string,
+    captcha: string,
+    rules?: ValidationRules
+  ) => {
+    isValid: boolean;
+    error: string | null;
+  };
+  error: string | null;
+  isValid: boolean;
+}
+
+// Return type for useCaptchaAttempts hook
+export interface CaptchaAttempts {
+  attempts: number;
+  maxAttempts: number;
+  remainingAttempts: number;
+  isMaxReached: boolean;
+  incrementAttempts: () => void;
+  resetAttempts: () => void;
+}
+
+// Return type for useCaptchaAudio hook
+export interface CaptchaAudio {
+  speak: (text: string) => void;
+  isSupported: boolean;
+  isPlaying: boolean;
+  stop: () => void;
+}
+
+// Return type for comprehensive useCaptchaState hook
+export interface CaptchaState {
+  // Generator state
+  captchaText: string;
+  refresh: () => void;
+
+  // Input state
+  userInput: string;
+  setUserInput: (input: string) => void;
+
+  // Validation state
+  isValid: boolean;
+  error: string | null;
+  validate: () => boolean;
+
+  // Attempts state
+  attempts: number;
+  maxAttempts: number;
+  remainingAttempts: number;
+  isMaxReached: boolean;
+
+  // Audio functionality
+  speakCaptcha: () => void;
+  isAudioSupported: boolean;
+  isAudioPlaying: boolean;
+
+  // Configuration
+  config: CaptchaConfig;
+  updateConfig: (newConfig: Partial<CaptchaConfig>) => void;
+}
