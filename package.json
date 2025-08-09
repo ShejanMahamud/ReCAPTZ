@@ -1,6 +1,6 @@
 {
   "name": "recaptz",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "private": false,
   "type": "module",
   "main": "dist/recaptz.umd.js",
@@ -71,7 +71,7 @@
   "bugs": {
     "url": "https://github.com/ShejanMahamud/recaptz/issues"
   },
-  "homepage": "https://recaptz.vercel.app",
+  "homepage": "https://recaptz-docs.vercel.app",
   "publishConfig": {
     "access": "public"
   }
