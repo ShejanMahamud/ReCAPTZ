@@ -685,20 +685,3 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 📄 License
 
 MIT © [Shejan Mahamud](https://github.com/ShejanMahamud)
-
-## 📞 Support & Community
-
-- 🐛 [Report Issues](https://github.com/ShejanMahamud/recaptz/issues)
-- 💬 [Discussions](https://github.com/ShejanMahamud/recaptz/discussions)
-- 📚 [Documentation](https://recaptz.dev)
-- 🎯 [Examples](https://github.com/ShejanMahamud/recaptz/tree/main/examples)
-
-## 🙏 Acknowledgments
-
-Special thanks to all contributors and the React community for their support and feedback.
-
----
-
-**Made with ❤️ by [Shejan Mahamud](https://github.com/ShejanMahamud)**
-
-_Secure your applications with confidence using ReCAPTZ_ 🛡️
