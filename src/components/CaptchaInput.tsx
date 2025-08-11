@@ -1,12 +1,14 @@
 import { AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useCaptcha } from "../context/CaptchaContext";
+import { CaptchaI18n } from "../types";
 
 interface CaptchaInputProps {
   className?: string;
   onChange?: (value: string) => void;
   darkMode?: boolean;
-  i18n?: any;
+  i18n?: CaptchaI18n;
+  disabled?: boolean;
 }
 
 export const CaptchaInput: React.FC<CaptchaInputProps> = ({
@@ -14,16 +16,27 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
   onChange,
   darkMode = false,
   i18n = {},
+  disabled = false,
 }) => {
-  const { setUserInput, validate, error, isValid, captchaText } = useCaptcha();
+  const {
+    setUserInput,
+    validate,
+    error,
+    isValid,
+    captchaText,
+    isLoading,
+    playAudio,
+  } = useCaptcha();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyPress = async (e: KeyboardEvent) => {
+      if (disabled || isLoading) return;
+
       if (e.code === "Space" && document.activeElement !== inputRef.current) {
         e.preventDefault();
-        speakCaptcha();
+        await handleSpeakCaptcha();
       }
       if (e.code === "Escape") {
         setUserInput("");
@@ -36,46 +49,38 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [captchaText]);
+  }, [captchaText, disabled, isLoading]);
 
-  const speakCaptcha = () => {
-    if ("speechSynthesis" in window && !isSpeaking) {
-      setIsSpeaking(true);
-      window.speechSynthesis.cancel();
+  const handleSpeakCaptcha = async () => {
+    if (disabled || isLoading || isSpeaking) return;
 
-      const utterance = new SpeechSynthesisUtterance();
-      utterance.text = Array.from(captchaText).join(" ");
-      utterance.rate = 0.7;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      utterance.onend = () => {
-        setIsSpeaking(false);
-      };
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(
-        (voice) =>
-          voice.name.includes("Google") || voice.name.includes("English")
-      );
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-
-      window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+    try {
+      await playAudio();
+    } catch (error) {
+      console.error("Audio playback failed:", error);
+    } finally {
+      setIsSpeaking(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const value = e.target.value;
     setUserInput(value);
     onChange?.(value);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled || isLoading) return;
     if (e.key === "Enter") {
-      validate();
+      await validate();
     }
+  };
+
+  const handleValidate = async () => {
+    if (disabled || isLoading) return;
+    await validate();
   };
 
   const mergedI18n = {
@@ -85,12 +90,15 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
     ...i18n,
   };
 
+  const isInputDisabled = disabled || isLoading;
+
   return (
     <div className="space-y-3">
       <div className="relative">
         <input
           ref={inputRef}
           type="text"
+          disabled={isInputDisabled}
           className={`w-full px-3 py-2 text-sm rounded-md transition-all duration-200
             ${
               error
@@ -114,6 +122,7 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
                 ? "text-white placeholder-gray-500"
                 : "text-gray-900 placeholder-gray-400"
             }
+            ${isInputDisabled ? "opacity-50 cursor-not-allowed" : ""}
             focus:outline-hidden focus:ring-2 focus:ring-offset-0 border`}
           placeholder={mergedI18n.inputPlaceholder}
           onChange={handleChange}
@@ -143,13 +152,15 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
       </div>
 
       <button
-        onClick={validate}
+        onClick={handleValidate}
+        disabled={isInputDisabled}
         className={`${className} w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium
           transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-0
+          ${isInputDisabled ? "opacity-50 cursor-not-allowed" : ""}
           ${
             darkMode
-              ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500/30 text-white"
-              : "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-200"
+              ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500/50 text-white"
+              : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-400 text-white"
           }`}
       >
         <ShieldCheck className="w-4 h-4" />
@@ -158,36 +169,21 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
 
       {error && (
         <div
-          className="flex items-start gap-1.5 -mt-1"
           id="captcha-error"
-          role="alert"
+          className={`text-xs ${darkMode ? "text-red-400" : "text-red-600"}`}
         >
-          <AlertCircle
-            className={`w-3.5 h-3.5 mt-0.5 ${
-              darkMode ? "text-red-400" : "text-red-500"
-            }`}
-          />
-          <p
-            className={`text-xs ${darkMode ? "text-red-400" : "text-red-600"}`}
-          >
-            {error}
-          </p>
+          {error}
         </div>
       )}
+
       {isValid && (
-        <div className="flex items-start gap-1.5 -mt-1" role="status">
-          <CheckCircle2
-            className={`w-3.5 h-3.5 mt-0.5 ${
-              darkMode ? "text-green-400" : "text-green-500"
-            }`}
-          />
-          <p
-            className={`text-xs ${
-              darkMode ? "text-green-400" : "text-green-600"
-            }`}
-          >
-            {mergedI18n.verificationSuccessful}
-          </p>
+        <div
+          className={`text-xs flex items-center gap-1.5 ${
+            darkMode ? "text-green-400" : "text-green-600"
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          {mergedI18n.verificationSuccessful}
         </div>
       )}
     </div>
