@@ -262,10 +262,10 @@ function MyForm() {
               <code>import.meta.env.VITE_SERVER_URL</code> (React)
             </li>
             <li>
-              <code>NEXT_PUBLIC_RECAPTZ_API_URL</code> (Next.js)
+              <code>import.meta.env.VITE_SERVER_URL</code> (Next.js)
             </li>
             <li>
-              <code>VITE_RECAPTZ_API_URL</code> (Vite)
+              <code>import.meta.env.VITE_SERVER_URL</code> (Vite)
             </li>
           </ul>
 

@@ -24,8 +24,10 @@ class CaptchaModeManager {
       typeof window !== "undefined" && (window as any).RECAPTZ_API_URL,
       typeof process !== "undefined" &&
         process.env.import.meta.env.VITE_SERVER_URL,
-      typeof process !== "undefined" && process.env.NEXT_PUBLIC_RECAPTZ_API_URL,
-      typeof process !== "undefined" && process.env.VITE_RECAPTZ_API_URL,
+      typeof process !== "undefined" &&
+        process.env.import.meta.env.VITE_SERVER_URL,
+      typeof process !== "undefined" &&
+        process.env.import.meta.env.VITE_SERVER_URL,
       // Environment variable from .env
       import.meta.env.VITE_SERVER_URL,
     ].filter(Boolean);
