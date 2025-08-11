@@ -51,9 +51,9 @@ function LoginForm() {
 }
 ```
 
-## 🎯 CAPTCHA Types
+## 🎯 CAPTCHA Types & Basic Usage
 
-### Basic Types
+### Standard CAPTCHA Types
 
 ```tsx
 // Numbers only (great for quick verification)
@@ -73,10 +73,10 @@ function LoginForm() {
 />
 ```
 
-### Advanced Features
+### Enhanced Features
 
 ```tsx
-// Timed CAPTCHA (auto-refresh)
+// Timed CAPTCHA with auto-refresh
 <Captcha
   type="mixed"
   length={5}
@@ -92,11 +92,98 @@ function LoginForm() {
   showConfetti={true}
 />
 
-// Accessible CAPTCHA with audio
+// Accessible CAPTCHA with audio support
 <Captcha
   type="numbers"
   enableAudio={true}
   autoFocus={true}
+/>
+```
+
+## 🌍 Real-World Integration Examples
+
+### 1. Login Form Protection
+
+```tsx
+<Captcha
+  type="numbers"
+  length={4}
+  showSuccessAnimation
+  maxAttempts={3}
+  validationRules={{
+    required: true,
+    allowedCharacters: "0123456789",
+  }}
+/>
+```
+
+### 2. Contact Form Spam Prevention
+
+```tsx
+<Captcha
+  type="letters"
+  length={5}
+  refreshable
+  enableAudio
+  validationRules={{
+    required: true,
+    customValidator: (value) =>
+      /^[a-zA-Z]+$/.test(value) || "Only letters are allowed",
+  }}
+/>
+```
+
+### 3. User Registration Security
+
+```tsx
+<Captcha
+  type="mixed"
+  length={6}
+  caseSensitive={false}
+  showSuccessAnimation
+  maxAttempts={5}
+  validationRules={{
+    required: true,
+    minLength: 6,
+    maxLength: 6,
+  }}
+/>
+```
+
+### 4. E-commerce Checkout Protection
+
+```tsx
+<Captcha
+  customCharacters="ABCDEF123456"
+  length={5}
+  caseSensitive={true}
+  validationRules={{
+    required: true,
+    allowedCharacters: "ABCDEF123456",
+    customValidator: (value) => {
+      const hasLetter = /[A-F]/.test(value);
+      const hasNumber = /[1-6]/.test(value);
+      return (
+        (hasLetter && hasNumber) ||
+        "Must contain at least one letter and one number"
+      );
+    },
+  }}
+/>
+```
+
+### 5. Password Reset Protection
+
+```tsx
+<Captcha
+  type="numbers"
+  length={6}
+  refreshInterval={60}
+  maxAttempts={3}
+  validationRules={{
+    required: true,
+    allowedCharacters: "0123456789",
+  }}
 />
 ```
 
@@ -175,131 +262,98 @@ interface CaptchaState {
 }
 ```
 
-## 🌍 Real-World Examples
-
-### 1. Login Form Protection
+## 🔧 Advanced Validation & Rules
 
 ```tsx
+interface ValidationRules {
+  minLength?: number;
+  maxLength?: number;
+  allowedCharacters?: string;
+  required?: boolean;
+  caseSensitive?: boolean;
+  customValidator?: (value: string) => boolean | string;
+}
+
+// Example with complex validation
 <Captcha
-  type="numbers"
-  length={4}
-  showSuccessAnimation
-  maxAttempts={3}
   validationRules={{
     required: true,
-    allowedCharacters: "0123456789",
-  }}
-/>
-```
-
-### 2. Contact Form Spam Prevention
-
-```tsx
-<Captcha
-  type="letters"
-  length={5}
-  refreshable
-  enableAudio
-  validationRules={{
-    required: true,
-    customValidator: (value) =>
-      /^[a-zA-Z]+$/.test(value) || "Only letters are allowed",
-  }}
-/>
-```
-
-### 3. User Registration
-
-```tsx
-<Captcha
-  type="mixed"
-  length={6}
-  caseSensitive={false}
-  showSuccessAnimation
-  maxAttempts={5}
-  validationRules={{
-    required: true,
-    minLength: 6,
-    maxLength: 6,
-  }}
-/>
-```
-
-### 4. E-commerce Checkout Security
-
-```tsx
-<Captcha
-  customCharacters="ABCDEF123456"
-  length={5}
-  caseSensitive={true}
-  validationRules={{
-    required: true,
+    minLength: 4,
+    maxLength: 8,
     allowedCharacters: "ABCDEF123456",
     customValidator: (value) => {
       const hasLetter = /[A-F]/.test(value);
       const hasNumber = /[1-6]/.test(value);
-      return (
-        (hasLetter && hasNumber) ||
-        "Must contain at least one letter and one number"
-      );
+      if (!hasLetter) return "Must contain at least one letter";
+      if (!hasNumber) return "Must contain at least one number";
+      return true;
     },
   }}
-/>
+/>;
 ```
 
-### 5. Password Reset Protection
+## 🎨 Styling & Theming
+
+### Basic Styling Options
 
 ```tsx
+// Light theme with custom styles
 <Captcha
-  type="numbers"
-  length={6}
-  refreshInterval={60}
-  maxAttempts={3}
-  validationRules={{
-    required: true,
-    allowedCharacters: "0123456789",
+  className="my-custom-captcha"
+  customStyles={{
+    backgroundColor: '#f8f9fa',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+  }}
+/>
+
+// Dark theme
+<Captcha
+  darkMode={true}
+  customStyles={{
+    backgroundColor: '#1a1a1a',
+    border: '1px solid #333',
+    borderRadius: '8px',
   }}
 />
 ```
 
-## 📋 Complete Props Reference
+### CSS Customization
 
-| Prop                   | Type                                | Default   | Description                        |
-| ---------------------- | ----------------------------------- | --------- | ---------------------------------- |
-| `type`                 | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate        |
-| `length`               | `number`                            | `6`       | Length of CAPTCHA text             |
-| `onChange`             | `(value: string) => void`           | -         | Callback when input changes        |
-| `onValidate`           | `(isValid: boolean) => void`        | -         | Callback when validation occurs    |
-| `onRefresh`            | `() => void`                        | -         | Callback when CAPTCHA is refreshed |
-| `onAudioPlay`          | `() => void`                        | -         | Callback when audio is played      |
-| `onError`              | `(error: string) => void`           | -         | Callback when error occurs         |
-| `onFail`               | `() => void`                        | -         | Callback when validation fails     |
-| `className`            | `string`                            | `''`      | Additional CSS classes             |
-| `customStyles`         | `React.CSSProperties`               | -         | Custom inline styles               |
-| `inputButtonStyle`     | `string`                            | `''`      | Input button styles                |
-| `refreshable`          | `boolean`                           | `true`    | Whether CAPTCHA can be refreshed   |
-| `caseSensitive`        | `boolean`                           | `false`   | Case-sensitive validation          |
-| `customCharacters`     | `string`                            | -         | Custom character set               |
-| `validationRules`      | `ValidationRules`                   | -         | Custom validation rules            |
-| `darkMode`             | `boolean`                           | `false`   | Enable dark mode theme             |
-| `autoFocus`            | `boolean`                           | `false`   | Auto-focus the input field         |
-| `enableAudio`          | `boolean`                           | `true`    | Enable audio support               |
-| `showSuccessAnimation` | `boolean`                           | `false`   | Show success animation             |
-| `showConfetti`         | `boolean`                           | `false`   | Show confetti on success           |
-| `confettiOptions`      | `object`                            | `{}`      | Confetti configuration             |
-| `refreshInterval`      | `number`                            | -         | Auto-refresh interval in seconds   |
-| `maxAttempts`          | `number`                            | -         | Maximum validation attempts        |
-| `rtl`                  | `boolean`                           | `false`   | Right-to-left layout               |
-| `i18n`                 | `I18nLabels`                        | -         | Internationalization labels        |
-| `loadingComponent`     | `React.ReactNode`                   | -         | Custom loading component           |
-| `successComponent`     | `React.ReactNode`                   | -         | Custom success component           |
-| `errorComponent`       | `React.ReactNode`                   | -         | Custom error component             |
-| `theme`                | `CaptchaTheme`                      | -         | Custom theme configuration         |
-| `onSuccess`            | `() => void`                        | -         | Callback when validation succeeds  |
+```css
+.my-custom-captcha {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
 
-## 🎉 Confetti Configuration
+.my-custom-captcha input {
+  border-radius: 8px;
+  border: 2px solid #e1e5e9;
+  padding: 12px;
+  font-size: 16px;
+}
 
-Control the success celebration animation with detailed options:
+.my-custom-captcha button {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-custom-captcha button:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+```
+
+## 🎉 Success Animations & Confetti
+
+### Confetti Configuration
 
 ```tsx
 interface ConfettiOptions {
@@ -312,7 +366,7 @@ interface ConfettiOptions {
   duration?: number;       // Animation duration in ms (default: 3000)
 }
 
-// Examples
+// Elaborate celebration
 <Captcha
   showConfetti={true}
   confettiOptions={{
@@ -337,7 +391,7 @@ interface ConfettiOptions {
 />
 ```
 
-## 🔧 Custom Components
+## 🔧 Custom Components & Theming
 
 Replace default components with your own implementations:
 
@@ -377,7 +431,7 @@ Replace default components with your own implementations:
 />
 ```
 
-## 📊 Event Handling
+## 📊 Event Handling & Analytics
 
 Comprehensive event tracking for analytics and debugging:
 
@@ -446,39 +500,9 @@ const handleCaptchaEvents = {
 />;
 ```
 
-## 🔧 Validation Rules
+## 🌍 Internationalization & Accessibility
 
-```tsx
-interface ValidationRules {
-  minLength?: number;
-  maxLength?: number;
-  allowedCharacters?: string;
-  required?: boolean;
-  caseSensitive?: boolean;
-  customValidator?: (value: string) => boolean | string;
-}
-
-// Example with complex validation
-<Captcha
-  validationRules={{
-    required: true,
-    minLength: 4,
-    maxLength: 8,
-    allowedCharacters: "ABCDEF123456",
-    customValidator: (value) => {
-      const hasLetter = /[A-F]/.test(value);
-      const hasNumber = /[1-6]/.test(value);
-      if (!hasLetter) return "Must contain at least one letter";
-      if (!hasNumber) return "Must contain at least one number";
-      return true;
-    },
-  }}
-/>;
-```
-
-## 🌍 Internationalization
-
-### Built-in Language Support
+### Multi-Language Support
 
 ```tsx
 // German
@@ -521,66 +545,7 @@ interface ValidationRules {
 />
 ```
 
-## 🎨 Styling & Customization
-
-### Custom Themes
-
-```tsx
-// Light theme with custom styles
-<Captcha
-  className="my-custom-captcha"
-  customStyles={{
-    backgroundColor: '#f8f9fa',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-  }}
-/>
-
-// Dark theme
-<Captcha
-  darkMode={true}
-  customStyles={{
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #333',
-    borderRadius: '8px',
-  }}
-/>
-```
-
-### CSS Customization
-
-```css
-.my-custom-captcha {
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.my-custom-captcha input {
-  border-radius: 8px;
-  border: 2px solid #e1e5e9;
-  padding: 12px;
-  font-size: 16px;
-}
-
-.my-custom-captcha button {
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.my-custom-captcha button:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-}
-```
-
-## ♿ Accessibility Features
+### Accessibility Features
 
 ReCAPTZ is built with accessibility as a priority:
 
@@ -611,9 +576,44 @@ ReCAPTZ is built with accessibility as a priority:
 | `Enter`  | Validate the input    |
 | `Escape` | Clear the input       |
 
-## 🛠️ Implementation Tips
+## 📋 Complete API Reference
 
-### 1. **Customize for Context**
+| Prop                   | Type                                | Default   | Description                        |
+| ---------------------- | ----------------------------------- | --------- | ---------------------------------- |
+| `type`                 | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate        |
+| `length`               | `number`                            | `6`       | Length of CAPTCHA text             |
+| `onChange`             | `(value: string) => void`           | -         | Callback when input changes        |
+| `onValidate`           | `(isValid: boolean) => void`        | -         | Callback when validation occurs    |
+| `onRefresh`            | `() => void`                        | -         | Callback when CAPTCHA is refreshed |
+| `onAudioPlay`          | `() => void`                        | -         | Callback when audio is played      |
+| `onError`              | `(error: string) => void`           | -         | Callback when error occurs         |
+| `onFail`               | `() => void`                        | -         | Callback when validation fails     |
+| `onSuccess`            | `() => void`                        | -         | Callback when validation succeeds  |
+| `className`            | `string`                            | `''`      | Additional CSS classes             |
+| `customStyles`         | `React.CSSProperties`               | -         | Custom inline styles               |
+| `inputButtonStyle`     | `string`                            | `''`      | Input button styles                |
+| `refreshable`          | `boolean`                           | `true`    | Whether CAPTCHA can be refreshed   |
+| `caseSensitive`        | `boolean`                           | `false`   | Case-sensitive validation          |
+| `customCharacters`     | `string`                            | -         | Custom character set               |
+| `validationRules`      | `ValidationRules`                   | -         | Custom validation rules            |
+| `darkMode`             | `boolean`                           | `false`   | Enable dark mode theme             |
+| `autoFocus`            | `boolean`                           | `false`   | Auto-focus the input field         |
+| `enableAudio`          | `boolean`                           | `true`    | Enable audio support               |
+| `showSuccessAnimation` | `boolean`                           | `false`   | Show success animation             |
+| `showConfetti`         | `boolean`                           | `false`   | Show confetti on success           |
+| `confettiOptions`      | `ConfettiOptions`                   | `{}`      | Confetti configuration             |
+| `refreshInterval`      | `number`                            | -         | Auto-refresh interval in seconds   |
+| `maxAttempts`          | `number`                            | -         | Maximum validation attempts        |
+| `rtl`                  | `boolean`                           | `false`   | Right-to-left layout               |
+| `i18n`                 | `I18nLabels`                        | -         | Internationalization labels        |
+| `loadingComponent`     | `React.ReactNode`                   | -         | Custom loading component           |
+| `successComponent`     | `React.ReactNode`                   | -         | Custom success component           |
+| `errorComponent`       | `React.ReactNode`                   | -         | Custom error component             |
+| `theme`                | `CaptchaTheme`                      | -         | Custom theme configuration         |
+
+## 🛠️ Implementation Best Practices
+
+### 1. **Context-Appropriate Configuration**
 
 Adjust difficulty and type based on the sensitivity of the action:
 
@@ -621,7 +621,7 @@ Adjust difficulty and type based on the sensitivity of the action:
 - **Registration**: Mixed characters (6 length)
 - **High-value transactions**: Custom validation with complex rules
 
-### 2. **Consider Accessibility**
+### 2. **Accessibility Considerations**
 
 Always enable audio support and provide clear instructions:
 
@@ -629,7 +629,7 @@ Always enable audio support and provide clear instructions:
 <Captcha enableAudio={true} autoFocus={true} />
 ```
 
-### 3. **Balance Security & UX**
+### 3. **Security & UX Balance**
 
 Use appropriate attempt limits and timeouts:
 

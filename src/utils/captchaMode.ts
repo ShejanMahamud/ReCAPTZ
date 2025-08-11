@@ -22,7 +22,8 @@ class CaptchaModeManager {
     const serverEndpoints = [
       // Environment variable patterns
       typeof window !== "undefined" && (window as any).RECAPTZ_API_URL,
-      typeof process !== "undefined" && process.env.REACT_APP_RECAPTZ_API_URL,
+      typeof process !== "undefined" &&
+        process.env.import.meta.env.VITE_SERVER_URL,
       typeof process !== "undefined" && process.env.NEXT_PUBLIC_RECAPTZ_API_URL,
       typeof process !== "undefined" && process.env.VITE_RECAPTZ_API_URL,
       // Environment variable from .env
@@ -51,7 +52,7 @@ class CaptchaModeManager {
     // Fallback to client mode
     this.mode = "client";
     if (import.meta.env.DEV) {
-    console.info("ReCAPTZ: Client mode enabled (no server detected)");
+      console.info("ReCAPTZ: Client mode enabled (no server detected)");
     }
   }
 

@@ -136,7 +136,7 @@ const ErrorHandlingExample: React.FC = () => {
             </li>
             <li>
               • Uses environment variables if available
-              (REACT_APP_RECAPTZ_API_URL)
+              (import.meta.env.VITE_SERVER_URL)
             </li>
             <li>• Falls back to client-side generation if no server found</li>
             <li>• Automatically handles server failures during runtime</li>
@@ -259,7 +259,7 @@ function MyForm() {
           </p>
           <ul className="text-sm bg-gray-50 p-3 rounded">
             <li>
-              <code>REACT_APP_RECAPTZ_API_URL</code> (React)
+              <code>import.meta.env.VITE_SERVER_URL</code> (React)
             </li>
             <li>
               <code>NEXT_PUBLIC_RECAPTZ_API_URL</code> (Next.js)
