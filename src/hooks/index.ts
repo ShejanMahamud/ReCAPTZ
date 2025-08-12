@@ -7,55 +7,138 @@ import {
   CaptchaState,
   CaptchaType,
   CaptchaValidator,
+  ServerCaptchaSession,
   ValidationRules,
 } from "../types";
-import { generateCaptcha, validateCaptcha } from "../utils/captchaGenerator";
+import { generateCaptcha } from "../utils/captchaGenerator";
+import { modeManager } from "../utils/captchaMode";
 
 /**
- * Hook for generating captcha text with customizable configuration
+ * Hook for generating captcha text with automatic server/client mode detection
  * Useful when you need just captcha generation without UI components
  */
 export const useCaptchaGenerator = (
   config: CaptchaConfig = {}
 ): CaptchaGenerator => {
-  const { type = "mixed", length = 6, customCharacters } = config;
+  const { type = "mixed", length = 6 } = config;
+  const [captchaText, setCaptchaText] = useState("");
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [captchaText, setCaptchaText] = useState(() =>
-    generateCaptcha(type, length, customCharacters)
+  const generateCaptchaWithMode = useCallback(
+    async (
+      captchaType: CaptchaType,
+      captchaLength: number
+    ): Promise<ServerCaptchaSession | string> => {
+      const mode = await modeManager.getCurrentMode();
+
+      if (mode === "server") {
+        const client = modeManager.getServerClient();
+        if (client) {
+          return await client.generate({
+            type: captchaType === "custom" ? "mixed" : captchaType,
+            length: captchaLength,
+            enableAudio: true,
+            showSuccessAnimation: true,
+          });
+        }
+      }
+
+      // Fallback to client mode
+      const effectiveType = captchaType === "custom" ? "mixed" : captchaType;
+      return generateCaptcha(
+        effectiveType,
+        captchaLength,
+        config.customCharacters
+      );
+    },
+    [config.customCharacters]
   );
 
-  const refresh = useCallback(() => {
-    setCaptchaText(generateCaptcha(type, length, customCharacters));
-  }, [type, length, customCharacters]);
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const effectiveType = type === "custom" ? "mixed" : type;
+      const result = await generateCaptchaWithMode(effectiveType, length);
+
+      if (typeof result === "string") {
+        // Client mode
+        setCaptchaText(result);
+        setSessionToken(null);
+      } else {
+        // Server mode
+        setCaptchaText(result.challengeText);
+        setSessionToken(result.sessionToken);
+      }
+    } catch (error) {
+      console.error("Failed to refresh CAPTCHA:", error);
+      // Fallback to client mode
+      try {
+        const effectiveType = type === "custom" ? "mixed" : type;
+        const fallbackCaptcha = generateCaptcha(
+          effectiveType,
+          length,
+          config.customCharacters
+        );
+        setCaptchaText(fallbackCaptcha);
+        setSessionToken(null);
+      } catch (fallbackError) {
+        console.error("Failed to generate fallback CAPTCHA:", fallbackError);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [type, length, generateCaptchaWithMode, config.customCharacters]);
 
   const generateNew = useCallback(
-    (newConfig?: Partial<CaptchaConfig>) => {
-      const mergedConfig = { ...config, ...newConfig };
-      const newCaptcha = generateCaptcha(
-        mergedConfig.type || type,
-        mergedConfig.length || length,
-        mergedConfig.customCharacters || customCharacters
-      );
-      setCaptchaText(newCaptcha);
-      return newCaptcha;
+    async (newConfig?: Partial<CaptchaConfig>): Promise<string> => {
+      setIsLoading(true);
+      try {
+        const mergedConfig = { ...config, ...newConfig };
+        const effectiveType =
+          (mergedConfig.type || type) === "custom"
+            ? "mixed"
+            : mergedConfig.type || type;
+        const result = await generateCaptchaWithMode(
+          effectiveType,
+          mergedConfig.length || length
+        );
+
+        if (typeof result === "string") {
+          setCaptchaText(result);
+          setSessionToken(null);
+          return result;
+        } else {
+          setCaptchaText(result.challengeText);
+          setSessionToken(result.sessionToken);
+          return result.challengeText;
+        }
+      } catch (error) {
+        console.error("Failed to generate new CAPTCHA:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [config, type, length, customCharacters]
+    [config, type, length, generateCaptchaWithMode]
   );
 
-  // Refresh when configuration changes
+  // Generate initial CAPTCHA
   useEffect(() => {
     refresh();
-  }, [type, length, customCharacters]);
+  }, []);
 
   return {
     captchaText,
     refresh,
     generateNew,
+    isLoading,
+    sessionToken,
   };
 };
 
 /**
- * Hook for validating captcha input with custom rules
+ * Hook for validating captcha input with automatic server/client mode detection
  * Useful for custom validation logic or when building custom UI
  */
 export const useCaptchaValidator = (
@@ -64,28 +147,92 @@ export const useCaptchaValidator = (
   const { caseSensitive = false, validationRules, i18n = {} } = config;
   const [error, setError] = useState<string | null>(null);
   const [isValid, setIsValid] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validate = useCallback(
-    (input: string, captcha: string): boolean => {
-      const compareInput = caseSensitive ? input : input.toLowerCase();
-      const compareCaptcha = caseSensitive ? captcha : captcha.toLowerCase();
-      const result = compareInput === compareCaptcha;
-      setIsValid(result);
-      setError(result ? null : "Invalid captcha");
-      return result;
+    async (input: string, sessionTokenOrCaptcha: string): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const mode = await modeManager.getCurrentMode();
+
+        if (mode === "server" && sessionTokenOrCaptcha) {
+          const client = modeManager.getServerClient();
+          if (client) {
+            const result = await client.verify(sessionTokenOrCaptcha, input, {
+              inputMethod: "keyboard",
+            });
+
+            setIsValid(result.success);
+            if (!result.success) {
+              setError(result.errorMessage || "CAPTCHA verification failed");
+            }
+
+            return result.success;
+          }
+        }
+
+        // Client mode validation
+        const compareInput = caseSensitive ? input : input.toLowerCase();
+        const compareCaptcha = caseSensitive
+          ? sessionTokenOrCaptcha
+          : sessionTokenOrCaptcha.toLowerCase();
+        const result = compareInput === compareCaptcha;
+        setIsValid(result);
+        setError(result ? null : "Invalid captcha");
+        return result;
+      } catch (err: unknown) {
+        setIsValid(false);
+        setError(err instanceof Error ? err.message : "Verification failed");
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
     },
     [caseSensitive]
   );
 
   const validateWithRules = useCallback(
-    (input: string, captcha: string, rules?: ValidationRules) => {
+    async (
+      input: string,
+      sessionTokenOrCaptcha: string,
+      rules?: ValidationRules
+    ) => {
+      // Perform client-side validation first
       const mergedRules = { ...validationRules, ...rules, caseSensitive };
-      const result = validateCaptcha(input, captcha, mergedRules, i18n);
-      setIsValid(result.isValid);
-      setError(result.error);
-      return result;
+
+      // Basic client-side validation
+      if (!input && mergedRules?.required) {
+        const error = i18n.captchaRequired || "CAPTCHA response is required";
+        setError(error);
+        setIsValid(false);
+        return { isValid: false, error };
+      }
+
+      if (mergedRules?.minLength && input.length < mergedRules.minLength) {
+        const error = i18n.minLength
+          ? i18n.minLength(mergedRules.minLength)
+          : `Input must be at least ${mergedRules.minLength} characters long`;
+        setError(error);
+        setIsValid(false);
+        return { isValid: false, error };
+      }
+
+      if (mergedRules?.maxLength && input.length > mergedRules.maxLength) {
+        const error = i18n.maxLength
+          ? i18n.maxLength(mergedRules.maxLength)
+          : `Input cannot be longer than ${mergedRules.maxLength} characters`;
+        setError(error);
+        setIsValid(false);
+        return { isValid: false, error };
+      }
+
+      // Server-side or client-side validation
+      const isValid = await validate(input, sessionTokenOrCaptcha);
+      return { isValid, error: isValid ? null : error };
     },
-    [validationRules, caseSensitive, i18n]
+    [validationRules, caseSensitive, i18n, validate, error]
   );
 
   return {
@@ -93,6 +240,7 @@ export const useCaptchaValidator = (
     validateWithRules,
     error,
     isValid,
+    isLoading,
   };
 };
 
@@ -127,11 +275,12 @@ export const useCaptchaAttempts = (
 };
 
 /**
- * Hook for text-to-speech functionality
+ * Hook for text-to-speech functionality with automatic server/client mode detection
  * Useful for accessibility features in custom implementations
  */
 export const useCaptchaAudio = (): CaptchaAudio => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentUtterance, setCurrentUtterance] =
     useState<SpeechSynthesisUtterance | null>(null);
 
@@ -168,6 +317,61 @@ export const useCaptchaAudio = (): CaptchaAudio => {
     [isSupported, currentUtterance]
   );
 
+  const playServerAudio = useCallback(
+    async (sessionToken: string) => {
+      if (!sessionToken) return;
+
+      setIsLoading(true);
+      try {
+        const mode = await modeManager.getCurrentMode();
+
+        if (mode === "server") {
+          const client = modeManager.getServerClient();
+          if (client) {
+            const audioData = await client.getAudio(sessionToken);
+
+            if (isSupported) {
+              // Stop any current speech
+              if (currentUtterance) {
+                speechSynthesis.cancel();
+              }
+
+              const utterance = new SpeechSynthesisUtterance(
+                audioData.audioText
+              );
+              utterance.rate = audioData.audioConfig.rate;
+              utterance.pitch = audioData.audioConfig.pitch;
+              utterance.volume = audioData.audioConfig.volume;
+
+              utterance.onstart = () => setIsPlaying(true);
+              utterance.onend = () => {
+                setIsPlaying(false);
+                setCurrentUtterance(null);
+              };
+              utterance.onerror = () => {
+                setIsPlaying(false);
+                setCurrentUtterance(null);
+              };
+
+              setCurrentUtterance(utterance);
+              speechSynthesis.speak(utterance);
+              return;
+            }
+          }
+        }
+
+        // Fallback to basic speak
+        speak(sessionToken);
+      } catch (error) {
+        console.error("Server audio playback failed:", error);
+        speak(sessionToken);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isSupported, currentUtterance, speak]
+  );
+
   const stop = useCallback(() => {
     if (isSupported && speechSynthesis.speaking) {
       speechSynthesis.cancel();
@@ -187,14 +391,16 @@ export const useCaptchaAudio = (): CaptchaAudio => {
 
   return {
     speak,
+    playServerAudio,
     isSupported,
     isPlaying,
     stop,
+    isLoading,
   };
 };
 
 /**
- * Comprehensive hook that combines all captcha functionality
+ * Comprehensive hook that combines all captcha functionality with automatic mode detection
  * Useful for building completely custom captcha implementations
  */
 export const useCaptchaState = (
@@ -202,6 +408,7 @@ export const useCaptchaState = (
 ): CaptchaState => {
   const [config, setConfig] = useState<CaptchaConfig>(initialConfig);
   const [userInput, setUserInput] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
 
   // Use individual hooks
   const generator = useCaptchaGenerator(config);
@@ -210,29 +417,38 @@ export const useCaptchaState = (
   const audio = useCaptchaAudio();
 
   // Enhanced validate function that handles attempts
-  const validate = useCallback(() => {
-    const result = validator.validateWithRules(
-      userInput,
-      generator.captchaText
-    );
-
-    if (!result.isValid) {
-      attempts.incrementAttempts();
-
-      // Auto-refresh if max attempts reached
-      if (attempts.isMaxReached) {
-        generator.refresh();
-        attempts.resetAttempts();
-        setUserInput("");
-      }
+  const validate = useCallback(async (): Promise<boolean> => {
+    if (!generator.sessionToken && !generator.captchaText) {
+      return false;
     }
 
-    return result.isValid;
+    setIsValidating(true);
+    try {
+      const result = await validator.validate(
+        userInput,
+        generator.sessionToken || generator.captchaText
+      );
+
+      if (!result) {
+        attempts.incrementAttempts();
+
+        // Auto-refresh if max attempts reached
+        if (attempts.isMaxReached) {
+          await generator.refresh();
+          attempts.resetAttempts();
+          setUserInput("");
+        }
+      }
+
+      return result;
+    } finally {
+      setIsValidating(false);
+    }
   }, [userInput, generator, validator, attempts]);
 
   // Enhanced refresh function that resets everything
-  const refresh = useCallback(() => {
-    generator.refresh();
+  const refresh = useCallback(async () => {
+    await generator.refresh();
     setUserInput("");
     attempts.resetAttempts();
   }, [generator, attempts]);
@@ -244,6 +460,15 @@ export const useCaptchaState = (
     audio.speak(spokenText);
   }, [generator.captchaText, audio]);
 
+  // Play server audio function
+  const playServerAudio = useCallback(async () => {
+    if (generator.sessionToken) {
+      await audio.playServerAudio(generator.sessionToken);
+    } else {
+      speakCaptcha();
+    }
+  }, [generator.sessionToken, audio, speakCaptcha]);
+
   // Update configuration
   const updateConfig = useCallback((newConfig: Partial<CaptchaConfig>) => {
     setConfig((prev) => ({ ...prev, ...newConfig }));
@@ -253,6 +478,7 @@ export const useCaptchaState = (
     // Generator state
     captchaText: generator.captchaText,
     refresh,
+    sessionToken: generator.sessionToken,
 
     // Input state
     userInput,
@@ -271,8 +497,13 @@ export const useCaptchaState = (
 
     // Audio functionality
     speakCaptcha,
+    playServerAudio,
     isAudioSupported: audio.isSupported,
     isAudioPlaying: audio.isPlaying,
+
+    // Loading states
+    isLoading: generator.isLoading || audio.isLoading,
+    isValidating,
 
     // Configuration
     config,
@@ -332,8 +563,8 @@ export const useCaptchaWithAutoRefresh = (
 
   // Override validate to handle auto-refresh
   const originalValidate = captchaState.validate;
-  const validate = useCallback(() => {
-    const isValid = originalValidate();
+  const validate = useCallback(async (): Promise<boolean> => {
+    const isValid = await originalValidate();
 
     if (!isValid && refreshOnFail) {
       if (progressiveDifficulty) {

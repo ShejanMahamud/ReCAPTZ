@@ -1,5 +1,13 @@
 import { useFocusRing } from "@react-aria/focus";
-import { KeyRound, RefreshCw, Volume2 } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+  Volume2,
+} from "lucide-react";
 import React, { useState } from "react";
 import { CaptchaProvider, useCaptcha } from "../context/CaptchaContext";
 import { CaptchaProps } from "../types";
@@ -8,6 +16,21 @@ import { CaptchaCanvas } from "./CaptchaCanvas";
 import { CaptchaInput } from "./CaptchaInput";
 import { CaptchaSuccess } from "./CaptchaSuccess";
 import { CaptchaTimer } from "./CaptchaTimer";
+
+// Hook for building custom CAPTCHA UIs
+export const useCaptchaState = () => {
+  const context = useCaptcha();
+
+  return {
+    captchaText: context.captchaText,
+    userInput: context.userInput,
+    setUserInput: context.setUserInput,
+    validate: context.validate,
+    refresh: context.refresh,
+    isValid: context.isValid,
+    error: context.error,
+  };
+};
 
 const defaultI18n = {
   securityCheck: "Security Check",
@@ -18,6 +41,55 @@ const defaultI18n = {
   escToClear: "Esc to clear",
 };
 
+const ErrorDisplay: React.FC<{
+  error: string;
+  severity?: "low" | "medium" | "high";
+  darkMode: boolean;
+}> = ({ error, severity = "medium", darkMode }) => {
+  const getErrorIcon = () => {
+    switch (severity) {
+      case "low":
+        return <Info className="w-4 h-4 flex-shrink-0" />;
+      case "high":
+        return <AlertTriangle className="w-4 h-4 flex-shrink-0" />;
+      default:
+        return <AlertCircle className="w-4 h-4 flex-shrink-0" />;
+    }
+  };
+
+  const getErrorStyles = () => {
+    const baseStyles = "mb-3 p-3 rounded-md flex items-start gap-2 text-sm";
+
+    switch (severity) {
+      case "low":
+        return `${baseStyles} ${
+          darkMode
+            ? "bg-blue-500/10 border border-blue-500/20 text-blue-300"
+            : "bg-blue-50 border border-blue-200 text-blue-700"
+        }`;
+      case "high":
+        return `${baseStyles} ${
+          darkMode
+            ? "bg-red-500/20 border border-red-500/30 text-red-300"
+            : "bg-red-50 border border-red-300 text-red-700"
+        }`;
+      default:
+        return `${baseStyles} ${
+          darkMode
+            ? "bg-yellow-500/15 border border-yellow-500/25 text-yellow-300"
+            : "bg-yellow-50 border border-yellow-300 text-yellow-700"
+        }`;
+    }
+  };
+
+  return (
+    <div className={getErrorStyles()}>
+      {getErrorIcon()}
+      <span className="flex-1">{error}</span>
+    </div>
+  );
+};
+
 const CaptchaContent: React.FC<CaptchaProps> = ({
   onChange,
   className = "",
@@ -25,48 +97,82 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   refreshable = true,
   darkMode = false,
   enableAudio = true,
+  disableSpaceToHear = false,
   showSuccessAnimation = true,
   refreshInterval = 0,
   i18n = {},
   maxAttempts,
   onRefresh,
   onAudioPlay,
+  onError,
   rtl = false,
   showConfetti = false,
   confettiOptions = {},
+  loadingComponent,
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
-  const { captchaText, refresh, isValid, setUserInput } = useCaptcha();
+  const {
+    refresh,
+    isValid,
+    setUserInput,
+    isLoading,
+    error,
+    playAudio,
+    currentAttempts,
+  } = useCaptcha();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const handleRefresh = () => {
-    setUserInput("");
-    setIsRefreshing(true);
-    refresh();
-    setTimeout(() => setIsRefreshing(false), 500);
-    if (onRefresh) onRefresh();
-  };
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [errorSeverity, setErrorSeverity] = useState<"low" | "medium" | "high">(
+    "medium"
+  );
 
-  const speakCaptcha = () => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance();
-      utterance.text = Array.from(captchaText).join(" ");
-      utterance.rate = 0.7;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(
-        (voice) =>
-          voice.name.includes("Google") || voice.name.includes("English")
-      );
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+  // Extract error severity from error message (this is a simple approach)
+  React.useEffect(() => {
+    if (error) {
+      if (
+        error.includes("attempt") ||
+        error.includes("Audio") ||
+        error.includes("Enter")
+      ) {
+        setErrorSeverity("low");
+      } else if (
+        error.includes("blocked") ||
+        error.includes("unavailable") ||
+        error.includes("server")
+      ) {
+        setErrorSeverity("high");
+      } else {
+        setErrorSeverity("medium");
       }
 
-      window.speechSynthesis.speak(utterance);
+      // Call onError prop if provided
+      onError?.(error);
+    }
+  }, [error, onError]);
+
+  const handleRefresh = async () => {
+    setUserInput("");
+    setIsRefreshing(true);
+    try {
+      await refresh();
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error("Refresh failed:", error);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
+  const handleAudioPlay = async () => {
+    setIsPlayingAudio(true);
+    try {
+      await playAudio();
       if (onAudioPlay) onAudioPlay();
+    } catch (error) {
+      console.error("Audio play failed:", error);
+    } finally {
+      setIsPlayingAudio(false);
     }
   };
 
@@ -78,6 +184,13 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   }, [isValid]);
 
   const mergedI18n = { ...defaultI18n, ...i18n };
+
+  if (isLoading && loadingComponent) {
+    return <div className={className}>{loadingComponent}</div>;
+  }
+
+  const isHighSeverityError = errorSeverity === "high";
+  const shouldDisableInteraction = isLoading || isHighSeverityError;
 
   return (
     <div
@@ -94,18 +207,27 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           <span className="text-sm font-medium">
             {mergedI18n.securityCheck}
           </span>
+          {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
         </div>
         <div className="flex items-center gap-1.5">
           {enableAudio && (
             <button
-              onClick={speakCaptcha}
-              className={`p-1.5 rounded-md transition-colors
+              onClick={handleAudioPlay}
+              disabled={isPlayingAudio || shouldDisableInteraction}
+              className={`p-1.5 rounded-md transition-colors disabled:opacity-50
               ${
                 darkMode
                   ? "hover:bg-gray-800 active:bg-gray-700"
                   : "hover:bg-gray-100 active:bg-gray-200"
-              }`}
+              }
+              ${isPlayingAudio ? "animate-pulse" : ""}
+              ${shouldDisableInteraction ? "cursor-not-allowed" : ""}`}
               aria-label={mergedI18n.listenToCaptcha}
+              title={
+                shouldDisableInteraction
+                  ? "Audio unavailable"
+                  : mergedI18n.listenToCaptcha
+              }
             >
               <Volume2 className="w-3.5 h-3.5" />
             </button>
@@ -114,21 +236,36 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           {refreshable && (
             <button
               onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`p-1.5 rounded-md transition-colors
+              disabled={isRefreshing || shouldDisableInteraction}
+              className={`p-1.5 rounded-md transition-colors disabled:opacity-50
                 ${
                   darkMode
                     ? "hover:bg-gray-800 active:bg-gray-700"
                     : "hover:bg-gray-100 active:bg-gray-200"
                 }
-                ${isRefreshing ? "animate-spin" : ""}`}
+                ${isRefreshing || isLoading ? "animate-spin" : ""}
+                ${shouldDisableInteraction ? "cursor-not-allowed" : ""}`}
               aria-label={mergedI18n.refreshCaptcha}
+              title={
+                shouldDisableInteraction
+                  ? "Refresh unavailable"
+                  : mergedI18n.refreshCaptcha
+              }
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
       </div>
+
+      {error && (
+        <ErrorDisplay
+          error={error}
+          severity={errorSeverity}
+          darkMode={darkMode}
+        />
+      )}
+
       {showSuccessAnimation && showSuccess && (
         <CaptchaSuccess
           darkMode={darkMode}
@@ -137,12 +274,13 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           confettiOptions={confettiOptions}
         />
       )}
+
       <div
-        className={`rounded-lg border shadow-sm ${
+        className={`rounded-lg border shadow-sm transition-all duration-200 ${
           darkMode
             ? "border-gray-700 bg-gray-900 shadow-gray-900/50"
             : "border-gray-200 bg-white"
-        }`}
+        } ${isHighSeverityError ? "opacity-60" : ""}`}
       >
         <div
           className={`p-3 border-b ${
@@ -151,7 +289,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         >
           <div
             className={`transition-opacity duration-300 ${
-              isRefreshing ? "opacity-50" : "opacity-100"
+              isRefreshing || isLoading ? "opacity-50" : "opacity-100"
             } ${isFocusVisible ? "border-2 border-blue-500" : ""}`}
           >
             <CaptchaCanvas darkMode={darkMode} height={60} />
@@ -167,19 +305,22 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         <div
           className={`${
             isFocusVisible ? "border-2 border-blue-500 p-3" : "p-3"
-          }`}
+          } ${inputButtonStyle}`}
         >
           <CaptchaInput
+            className="w-full"
             onChange={onChange}
             darkMode={darkMode}
-            className={inputButtonStyle}
-            i18n={i18n}
+            i18n={mergedI18n}
+            disabled={isLoading}
+            disableSpaceToHear={disableSpaceToHear}
           />
         </div>
       </div>
+
       {typeof maxAttempts === "number" && (
         <CaptchaAttempts
-          current={0}
+          current={currentAttempts}
           max={maxAttempts}
           darkMode={darkMode}
           i18n={i18n}
@@ -189,10 +330,16 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
       <div
         className={`mt-1.5 text-xs ${
           darkMode ? "text-gray-400" : "text-gray-500"
-        }`}
+        } ${isHighSeverityError ? "opacity-60" : ""}`}
       >
-        {enableAudio && ` ${mergedI18n.pressSpaceToHearCode} •`}{" "}
-        {mergedI18n.enterToValidate} •{mergedI18n.escToClear}
+        {enableAudio &&
+          !disableSpaceToHear &&
+          !isHighSeverityError &&
+          ` ${mergedI18n.pressSpaceToHearCode} •`}{" "}
+        {!isHighSeverityError && `${mergedI18n.enterToValidate} •`}
+        {!isHighSeverityError && mergedI18n.escToClear}
+        {isHighSeverityError &&
+          "Service temporarily unavailable. Please try again later."}
       </div>
     </div>
   );

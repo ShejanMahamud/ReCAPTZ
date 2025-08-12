@@ -1,46 +1,743 @@
 import {
   Accessibility,
-  AlertTriangle,
-  Settings as AlphabetLatin,
   ArrowRight,
-  Book,
-  CheckCircle2,
-  Code,
-  FileCode2,
   Github,
   Globe,
-  Hash,
-  Keyboard,
-  Moon,
   Package,
-  Palette,
-  Settings,
   ShieldCheck,
-  Shuffle,
   Terminal,
-  Timer,
-  Volume2,
   Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Captcha } from "./components/Captcha";
 
-function App() {
-  const [numberValid, setNumberValid] = useState(false);
-  const [letterValid, setLetterValid] = useState(false);
-  const [mixedValid, setMixedValid] = useState(false);
-  const [customValid, setCustomValid] = useState(false);
-  const [timedValid, setTimedValid] = useState(false);
-  const [darkModeValid, setDarkModeValid] = useState(false);
-  const [accessibleValid, setAccessibleValid] = useState(false);
-  const [complexValid, setComplexValid] = useState(false);
+// Interactive Playground Component
+function CaptchaPlayground() {
+  const [config, setConfig] = useState({
+    type: "mixed" as "numbers" | "letters" | "mixed",
+    length: 6,
+    darkMode: false,
+    caseSensitive: false,
+    refreshable: true,
+    enableAudio: true,
+    showSuccessAnimation: true,
+    showConfetti: false,
+    autoFocus: false,
+    maxAttempts: 3,
+    refreshInterval: 0,
+    customCharacters: "",
+    language: "english",
+    rtl: false,
+    // Advanced features
+    className: "",
+    customStyles: "",
+    inputButtonStyle: "",
+    // Validation rules
+    validationRequired: true,
+    validationMinLength: 0,
+    validationMaxLength: 0,
+    validationAllowedChars: "",
+    validationCustom: "",
+    // Confetti options
+    confettiParticles: 100,
+    confettiColors: "#ff0000,#00ff00,#0000ff",
+    confettiDuration: 3000,
+    // Event tracking
+    showEventLog: false,
+  });
 
-  const CodeBlock = ({ children }: { children: React.ReactNode }) => (
-    <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-      <code>{children}</code>
-    </pre>
+  const [appliedConfig, setAppliedConfig] = useState(config);
+  const [isValid, setIsValid] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [eventLog, setEventLog] = useState<string[]>([]);
+
+  const addToEventLog = (event: string) => {
+    if (config.showEventLog) {
+      setEventLog((prev) => [
+        ...prev.slice(-4),
+        `${new Date().toLocaleTimeString()}: ${event}`,
+      ]);
+    }
+  };
+
+  const presets = {
+    login: {
+      type: "numbers" as const,
+      length: 4,
+      darkMode: false,
+      maxAttempts: 3,
+      showSuccessAnimation: true,
+      description: "Simple 4-digit verification for login forms",
+    },
+    registration: {
+      type: "mixed" as const,
+      length: 6,
+      darkMode: false,
+      maxAttempts: 5,
+      showSuccessAnimation: true,
+      description: "Mixed characters for user registration",
+    },
+    ecommerce: {
+      type: "mixed" as const,
+      length: 5,
+      customCharacters: "ABCDEF123456",
+      caseSensitive: true,
+      maxAttempts: 3,
+      description: "High-security for e-commerce transactions",
+    },
+    accessible: {
+      type: "letters" as const,
+      length: 4,
+      enableAudio: true,
+      autoFocus: true,
+      showSuccessAnimation: true,
+      description: "Accessibility-focused with audio support",
+    },
+  };
+
+  const languages = {
+    english: {},
+    german: {
+      securityCheck: "Sicherheitsüberprüfung",
+      listenToCaptcha: "CAPTCHA anhören",
+      refreshCaptcha: "CAPTCHA neu laden",
+      inputPlaceholder: "Code eingeben",
+      verifyButton: "Prüfen",
+      verificationSuccessful: "Erfolg!",
+    },
+    spanish: {
+      securityCheck: "Verificación de seguridad",
+      listenToCaptcha: "Escuchar CAPTCHA",
+      refreshCaptcha: "Actualizar CAPTCHA",
+      inputPlaceholder: "Ingrese el código",
+      verifyButton: "Verificar",
+      verificationSuccessful: "¡Éxito!",
+    },
+  };
+
+  const updateConfig = (key: string, value: string | number | boolean) => {
+    setConfig((prev) => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+    setIsValid(false);
+  };
+
+  const applyPreset = (presetKey: keyof typeof presets) => {
+    const preset = presets[presetKey];
+    const newConfig = { ...config, ...preset };
+    setConfig(newConfig);
+    setAppliedConfig(newConfig);
+    setHasChanges(false);
+    setIsValid(false);
+  };
+
+  const applyChanges = () => {
+    setAppliedConfig(config);
+    setHasChanges(false);
+  };
+
+  const resetChanges = () => {
+    setConfig(appliedConfig);
+    setHasChanges(false);
+  };
+
+  const generateCodeSnippet = () => {
+    const props = [];
+
+    if (config.type !== "mixed") props.push(`type="${config.type}"`);
+    if (config.length !== 6) props.push(`length={${config.length}}`);
+    if (config.darkMode) props.push(`darkMode={true}`);
+    if (config.caseSensitive) props.push(`caseSensitive={true}`);
+    if (!config.refreshable) props.push(`refreshable={false}`);
+    if (!config.enableAudio) props.push(`enableAudio={false}`);
+    if (config.showSuccessAnimation) props.push(`showSuccessAnimation={true}`);
+    if (config.showConfetti) props.push(`showConfetti={true}`);
+    if (config.autoFocus) props.push(`autoFocus={true}`);
+    if (config.maxAttempts !== 3)
+      props.push(`maxAttempts={${config.maxAttempts}}`);
+    if (config.refreshInterval > 0)
+      props.push(`refreshInterval={${config.refreshInterval}}`);
+    if (config.customCharacters)
+      props.push(`customCharacters="${config.customCharacters}"`);
+    if (config.rtl) props.push(`rtl={true}`);
+    if (config.language !== "english")
+      props.push(`i18n={${config.language}Labels}`);
+
+    props.push(`onValidate={(isValid) => setVerified(isValid)}`);
+
+    return `<Captcha\n  ${props.join("\n  ")}\n/>`;
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      <div className="text-center mb-8">
+        <h3 className="text-2xl font-semibold mb-4">
+          🎮 Interactive Playground
+        </h3>
+        <p className="text-gray-600">
+          Configure your CAPTCHA settings and click "Apply Changes" to see the
+          results
+        </p>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Configuration Panel */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-4">
+            <h4 className="text-lg font-semibold mb-4">⚙️ Configuration</h4>
+
+            {/* Apply/Reset Buttons */}
+            {hasChanges && (
+              <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800 mb-2">
+                  You have unsaved changes
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={applyChanges}
+                    className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Apply Changes
+                  </button>
+                  <button
+                    onClick={resetChanges}
+                    className="px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Presets */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Presets
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(presets).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    onClick={() => applyPreset(key as keyof typeof presets)}
+                    className="p-2 text-xs bg-gray-100 hover:bg-gray-200 rounded-md transition-colors capitalize"
+                    title={preset.description}
+                  >
+                    {key}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Basic Settings */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type
+                </label>
+                <select
+                  value={config.type}
+                  onChange={(e) => updateConfig("type", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="numbers">Numbers</option>
+                  <option value="letters">Letters</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Length: {config.length}
+                </label>
+                <input
+                  type="range"
+                  min="3"
+                  max="10"
+                  value={config.length}
+                  onChange={(e) =>
+                    updateConfig("length", parseInt(e.target.value))
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Max Attempts: {config.maxAttempts}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={config.maxAttempts}
+                  onChange={(e) =>
+                    updateConfig("maxAttempts", parseInt(e.target.value))
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Auto-refresh (seconds): {config.refreshInterval || "Off"}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="60"
+                  step="5"
+                  value={config.refreshInterval}
+                  onChange={(e) =>
+                    updateConfig("refreshInterval", parseInt(e.target.value))
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Characters
+                </label>
+                <input
+                  type="text"
+                  value={config.customCharacters}
+                  onChange={(e) =>
+                    updateConfig("customCharacters", e.target.value)
+                  }
+                  placeholder="e.g., ABCDEF123456"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Language
+                </label>
+                <select
+                  value={config.language}
+                  onChange={(e) => updateConfig("language", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="english">English</option>
+                  <option value="german">German</option>
+                  <option value="spanish">Spanish</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Boolean Options */}
+            <div className="mt-6 space-y-3">
+              {[
+                { key: "darkMode", label: "Dark Mode" },
+                { key: "caseSensitive", label: "Case Sensitive" },
+                { key: "refreshable", label: "Refreshable" },
+                { key: "enableAudio", label: "Enable Audio" },
+                { key: "showSuccessAnimation", label: "Success Animation" },
+                { key: "showConfetti", label: "Show Confetti" },
+                { key: "autoFocus", label: "Auto Focus" },
+                { key: "rtl", label: "Right-to-Left" },
+                { key: "showEventLog", label: "Show Event Log" },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={config[key as keyof typeof config] as boolean}
+                    onChange={(e) => updateConfig(key, e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{label}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Advanced Styling */}
+            <div className="mt-6 space-y-4">
+              <h5 className="font-medium text-gray-900">Advanced Styling</h5>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CSS Class Name
+                </label>
+                <input
+                  type="text"
+                  value={config.className}
+                  onChange={(e) => updateConfig("className", e.target.value)}
+                  placeholder="e.g., my-custom-captcha"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Styles (CSS)
+                </label>
+                <textarea
+                  value={config.customStyles}
+                  onChange={(e) => updateConfig("customStyles", e.target.value)}
+                  placeholder="e.g., backgroundColor: '#f0f0f0', borderRadius: '8px'"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Input Button Style
+                </label>
+                <input
+                  type="text"
+                  value={config.inputButtonStyle}
+                  onChange={(e) =>
+                    updateConfig("inputButtonStyle", e.target.value)
+                  }
+                  placeholder="e.g., btn-primary custom-input"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Validation Rules */}
+            <div className="mt-6 space-y-4">
+              <h5 className="font-medium text-gray-900">Validation Rules</h5>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Min Length
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={config.validationMinLength}
+                    onChange={(e) =>
+                      updateConfig(
+                        "validationMinLength",
+                        parseInt(e.target.value) || 0
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Length
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={config.validationMaxLength}
+                    onChange={(e) =>
+                      updateConfig(
+                        "validationMaxLength",
+                        parseInt(e.target.value) || 0
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Allowed Characters (Validation)
+                </label>
+                <input
+                  type="text"
+                  value={config.validationAllowedChars}
+                  onChange={(e) =>
+                    updateConfig("validationAllowedChars", e.target.value)
+                  }
+                  placeholder="e.g., ABCDEF123456"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custom Validator (JS Expression)
+                </label>
+                <textarea
+                  value={config.validationCustom}
+                  onChange={(e) =>
+                    updateConfig("validationCustom", e.target.value)
+                  }
+                  placeholder="e.g., /^[A-Z]+$/.test(value) || 'Only uppercase letters'"
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Confetti Options */}
+            {config.showConfetti && (
+              <div className="mt-6 space-y-4">
+                <h5 className="font-medium text-gray-900">Confetti Options</h5>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Particle Count: {config.confettiParticles}
+                  </label>
+                  <input
+                    type="range"
+                    min="50"
+                    max="500"
+                    step="25"
+                    value={config.confettiParticles}
+                    onChange={(e) =>
+                      updateConfig(
+                        "confettiParticles",
+                        parseInt(e.target.value)
+                      )
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Colors (comma-separated hex)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.confettiColors}
+                    onChange={(e) =>
+                      updateConfig("confettiColors", e.target.value)
+                    }
+                    placeholder="#ff0000,#00ff00,#0000ff"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Duration (ms): {config.confettiDuration}
+                  </label>
+                  <input
+                    type="range"
+                    min="1000"
+                    max="10000"
+                    step="500"
+                    value={config.confettiDuration}
+                    onChange={(e) =>
+                      updateConfig("confettiDuration", parseInt(e.target.value))
+                    }
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Final Apply Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={applyChanges}
+                disabled={!hasChanges}
+                className={`w-full py-2 px-4 rounded-md transition-colors font-medium ${
+                  hasChanges
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {hasChanges ? "Apply Changes" : "No Changes to Apply"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Preview Panel */}
+        <div className="lg:col-span-2">
+          <div className="space-y-6">
+            {/* CAPTCHA Preview */}
+            <div
+              className={`rounded-2xl shadow-xl p-8 ${
+                appliedConfig.darkMode
+                  ? "bg-gray-900 border border-gray-800"
+                  : "bg-white border border-gray-100"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h4
+                  className={`text-lg font-semibold ${
+                    appliedConfig.darkMode ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  🎯 Live Preview
+                </h4>
+                <div
+                  className={`text-sm ${
+                    appliedConfig.darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  Status:{" "}
+                  {isValid ? (
+                    <span className="text-green-500 font-medium">
+                      ✅ Verified
+                    </span>
+                  ) : (
+                    "Awaiting verification"
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-center">
+                <Captcha
+                  type={appliedConfig.type}
+                  length={appliedConfig.length}
+                  darkMode={appliedConfig.darkMode}
+                  caseSensitive={appliedConfig.caseSensitive}
+                  refreshable={appliedConfig.refreshable}
+                  enableAudio={appliedConfig.enableAudio}
+                  showSuccessAnimation={appliedConfig.showSuccessAnimation}
+                  showConfetti={appliedConfig.showConfetti}
+                  autoFocus={appliedConfig.autoFocus}
+                  maxAttempts={appliedConfig.maxAttempts}
+                  refreshInterval={appliedConfig.refreshInterval}
+                  customCharacters={appliedConfig.customCharacters || undefined}
+                  rtl={appliedConfig.rtl}
+                  className={appliedConfig.className}
+                  inputButtonStyle={appliedConfig.inputButtonStyle}
+                  customStyles={
+                    appliedConfig.customStyles
+                      ? eval(`({${appliedConfig.customStyles}})`)
+                      : undefined
+                  }
+                  confettiOptions={{
+                    particleCount: appliedConfig.confettiParticles,
+                    colors: appliedConfig.confettiColors
+                      .split(",")
+                      .map((c) => c.trim()),
+                    duration: appliedConfig.confettiDuration,
+                  }}
+                  validationRules={{
+                    required: appliedConfig.validationRequired,
+                    ...(appliedConfig.validationMinLength > 0 && {
+                      minLength: appliedConfig.validationMinLength,
+                    }),
+                    ...(appliedConfig.validationMaxLength > 0 && {
+                      maxLength: appliedConfig.validationMaxLength,
+                    }),
+                    ...(appliedConfig.validationAllowedChars && {
+                      allowedCharacters: appliedConfig.validationAllowedChars,
+                    }),
+                    ...(appliedConfig.validationCustom && {
+                      customValidator: (value: string) => {
+                        try {
+                          return eval(
+                            appliedConfig.validationCustom.replace(
+                              "value",
+                              `"${value}"`
+                            )
+                          );
+                        } catch {
+                          return "Invalid custom validator";
+                        }
+                      },
+                    }),
+                  }}
+                  i18n={
+                    languages[appliedConfig.language as keyof typeof languages]
+                  }
+                  onChange={(value) =>
+                    addToEventLog(`Input changed: "${value}"`)
+                  }
+                  onValidate={(valid) => {
+                    setIsValid(valid);
+                    addToEventLog(
+                      `Validation: ${valid ? "Success" : "Failed"}`
+                    );
+                  }}
+                  onRefresh={() => addToEventLog("CAPTCHA refreshed")}
+                  onAudioPlay={() => addToEventLog("Audio played")}
+                  onError={(error) => addToEventLog(`Error: ${error}`)}
+                  onFail={() => addToEventLog("Validation failed")}
+                />
+              </div>
+            </div>
+
+            {/* Event Log */}
+            {appliedConfig.showEventLog && eventLog.length > 0 && (
+              <div
+                className={`rounded-2xl shadow-xl p-6 ${
+                  appliedConfig.darkMode
+                    ? "bg-gray-900 border border-gray-800"
+                    : "bg-white border border-gray-100"
+                }`}
+              >
+                <h4
+                  className={`text-lg font-semibold mb-4 ${
+                    appliedConfig.darkMode ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  📊 Event Log
+                </h4>
+                <div className="space-y-2">
+                  {eventLog.map((event, index) => (
+                    <div
+                      key={index}
+                      className={`text-sm font-mono p-2 rounded ${
+                        appliedConfig.darkMode
+                          ? "bg-gray-800 text-gray-300"
+                          : "bg-gray-50 text-gray-600"
+                      }`}
+                    >
+                      {event}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generated Code */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold">📝 Generated Code</h4>
+                <button
+                  onClick={() =>
+                    navigator.clipboard.writeText(generateCodeSnippet())
+                  }
+                  className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Copy Code
+                </button>
+              </div>
+              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+                <code>{generateCodeSnippet()}</code>
+              </pre>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
+              <h4 className="text-lg font-semibold mb-4">
+                💡 Rate Limiting Prevention
+              </h4>
+              <div className="grid md:grid-cols-1 gap-4 text-sm">
+                <div className="space-y-2">
+                  <p>
+                    <strong>🔧 How it works:</strong> Adjust settings on the
+                    left, then click "Apply Changes" to update the CAPTCHA
+                  </p>
+                  <p>
+                    <strong>⚡ Performance:</strong> This prevents rate limiting
+                    by only generating new CAPTCHAs when you apply changes
+                  </p>
+                  <p>
+                    <strong>🎯 Tip:</strong> Use presets for quick
+                    configurations, or customize individual settings for your
+                    needs
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
+}
 
+function App() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
       <header className="w-full border-b bg-white/50 backdrop-blur-xs sticky top-0 z-50 shadow-xs">
@@ -150,804 +847,24 @@ function App() {
 
         <div id="demos" className="space-y-16 mb-16">
           <h2 className="text-3xl font-bold text-center mb-8">
-            Interactive Demos
+            Interactive Playground
           </h2>
           <div className="w-full flex items-center justify-center">
             <a
               href="https://www.npmjs.com/package/recaptz?activeTab=readme"
               className="cursor-pointer flex items-center gap-3 px-4 py-2 rounded-md transition-colors bg-blue-100 text-blue-600 font-medium"
             >
-              Example Code Here <ArrowRight size={20} />
+              View Documentation <ArrowRight size={20} />
             </a>
           </div>
-          <div className="space-y-8">
-            <h3 className="text-2xl font-semibold mb-6">Basic Types</h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white/80 backdrop-blur-xs p-8 rounded-2xl shadow-xl shadow-blue-100/50 border border-blue-100 hover:shadow-2xl hover:shadow-blue-100/50 transition-all duration-300">
-                <div className="flex items-center justify-between gap-3 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-100 rounded-xl">
-                      <Hash className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-800">
-                        Numbers Only
-                      </h2>
-                      <p className="text-sm text-gray-500">
-                        Perfect for numeric verification
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    {/* <button
-    onClick={() => navigator.clipboard.writeText(`
-  <Captcha
-    type="numbers"
-    length={4}
-    onValidate={setNumberValid}
-    validationRules={{
-      required: true,
-      allowedCharacters: "0123456789",
-    }}
-  />
-    `)}
-    className='p-1.5 rounded-md transition-colors
-         hover:bg-gray-100 active:bg-gray-200'
-    aria-label="Listen to CAPTCHA"
-  >
-    <Clipboard size={20}/>
-  </button> */}
-                  </div>
-                </div>
-                <Captcha
-                  type="numbers"
-                  length={4}
-                  refreshable
-                  // refreshInterval={30}
-                  showSuccessAnimation
-                  maxAttempts={2}
-                  onValidate={setNumberValid}
-                  validationRules={{
-                    required: true,
-                    allowedCharacters: "0123456789",
-                  }}
-                />
-                <div className="mt-4 text-sm text-gray-500">
-                  Status:{" "}
-                  {numberValid ? (
-                    <span className="text-green-600 font-medium">
-                      Verified ✓
-                    </span>
-                  ) : (
-                    "Awaiting verification"
-                  )}
-                </div>
-              </div>
 
-              <div className="bg-white/80 backdrop-blur-xs p-8 rounded-2xl shadow-xl shadow-purple-100/50 border border-purple-100 hover:shadow-2xl hover:shadow-purple-100/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-purple-100 rounded-xl">
-                    <AlphabetLatin className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Letters Only
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Alphabetic verification challenge
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  type="letters"
-                  length={6}
-                  onValidate={setLetterValid}
-                  validationRules={{
-                    required: true,
-                    customValidator: (value) =>
-                      /^[a-zA-Z]+$/.test(value) || "Only letters are allowed",
-                  }}
-                />
-                <div className="mt-4 text-sm text-gray-500">
-                  Status:{" "}
-                  {letterValid ? (
-                    <span className="text-green-600 font-medium">
-                      Verified ✓
-                    </span>
-                  ) : (
-                    "Awaiting verification"
-                  )}
-                </div>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl shadow-orange-100/50 border border-orange-100 hover:shadow-2xl hover:shadow-orange-100/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-orange-100 rounded-xl">
-                    <Settings className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Custom Characters
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Fully customizable character set
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  customCharacters="ABCDEF123456"
-                  length={5}
-                  onValidate={setCustomValid}
-                  caseSensitive={true}
-                  validationRules={{
-                    required: true,
-                    allowedCharacters: "ABCDEF123456",
-                    customValidator: (value) => {
-                      const hasLetter = /[A-F]/.test(value);
-                      const hasNumber = /[1-6]/.test(value);
-                      return (
-                        (hasLetter && hasNumber) ||
-                        "Must contain at least one letter and one number"
-                      );
-                    },
-                  }}
-                />
-                <div className="mt-4 space-y-2">
-                  <div className="text-sm text-gray-500">
-                    Status:{" "}
-                    {customValid ? (
-                      <span className="text-green-600 font-medium">
-                        Verified ✓
-                      </span>
-                    ) : (
-                      "Awaiting verification"
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 flex items-center gap-2">
-                    <code className="px-2 py-0.5 bg-gray-100 rounded text-xs">
-                      ABCDEF123456
-                    </code>
-                    <span className="text-xs">(case sensitive)</span>
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl shadow-green-100/50 border border-green-100 hover:shadow-2xl hover:shadow-green-100/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-green-100 rounded-xl">
-                    <Shuffle className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Mixed Characters
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Combined letters and numbers
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  type="mixed"
-                  length={8}
-                  onValidate={setMixedValid}
-                  validationRules={{
-                    required: true,
-                    minLength: 8,
-                    maxLength: 8,
-                  }}
-                />
-                <div className="mt-4 text-sm text-gray-500">
-                  Status:{" "}
-                  {mixedValid ? (
-                    <span className="text-green-600 font-medium">
-                      Verified ✓
-                    </span>
-                  ) : (
-                    "Awaiting verification"
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <h3 className="text-2xl font-semibold mb-6">Advanced Features</h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white/80 backdrop-blur-xs p-8 rounded-2xl shadow-xl shadow-orange-100/50 border border-orange-100 hover:shadow-2xl hover:shadow-orange-100/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-orange-100 rounded-xl">
-                    <Timer className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Timed CAPTCHA
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Complete within time limit
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  type="mixed"
-                  length={5}
-                  onValidate={setTimedValid}
-                  refreshInterval={30}
-                  validationRules={{
-                    required: true,
-                    minLength: 5,
-                  }}
-                />
-                <div className="mt-4 text-sm text-gray-500">
-                  Status:{" "}
-                  {timedValid ? (
-                    <span className="text-green-600 font-medium">
-                      Verified ✓
-                    </span>
-                  ) : (
-                    "Complete within 30 seconds"
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-xs p-8 rounded-2xl shadow-xl shadow-indigo-100/50 border border-indigo-100 hover:shadow-2xl hover:shadow-indigo-100/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-indigo-100 rounded-xl">
-                    <Volume2 className="w-6 h-6 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Accessible CAPTCHA
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      With audio support and keyboard navigation
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  type="letters"
-                  length={4}
-                  onValidate={setAccessibleValid}
-                  autoFocus
-                  showSuccessAnimation
-                  validationRules={{
-                    required: true,
-                  }}
-                />
-                <div className="mt-4 text-sm text-gray-500">
-                  <p>Press Space to hear the code</p>
-                  <p>
-                    Status:{" "}
-                    {accessibleValid ? (
-                      <span className="text-green-600 font-medium">
-                        Verified ✓
-                      </span>
-                    ) : (
-                      "Awaiting verification"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <h3 className="text-2xl font-semibold mb-6">
-              Customization Examples
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-gray-900 p-8 rounded-2xl shadow-xl shadow-gray-900/50 border border-gray-800">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gray-800 rounded-xl">
-                    <Moon className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">
-                      Dark Mode
-                    </h2>
-                    <p className="text-sm text-gray-400">
-                      Elegant dark theme design
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  type="mixed"
-                  length={6}
-                  darkMode
-                  onValidate={setDarkModeValid}
-                  validationRules={{
-                    required: true,
-                  }}
-                />
-                <div className="mt-4 text-sm text-gray-400">
-                  Status:{" "}
-                  {darkModeValid ? (
-                    <span className="text-green-400 font-medium">
-                      Verified ✓
-                    </span>
-                  ) : (
-                    "Awaiting verification"
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-xs p-8 rounded-2xl shadow-xl shadow-green-100/50 border border-green-100 hover:shadow-2xl hover:shadow-green-100/50 transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-green-100 rounded-xl">
-                    <Settings className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      Complex Validation
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                      Custom validation rules
-                    </p>
-                  </div>
-                </div>
-                <Captcha
-                  customCharacters="ABCDEF123456"
-                  length={6}
-                  caseSensitive={true}
-                  onValidate={setComplexValid}
-                  validationRules={{
-                    required: true,
-                    allowedCharacters: "ABCDEF123456",
-                    customValidator: (value) => {
-                      const hasLetter = /[A-F]/.test(value);
-                      const hasNumber = /[1-6]/.test(value);
-                      const hasMinLength = value.length >= 6;
-                      if (!hasLetter) return "Must contain at least one letter";
-                      if (!hasNumber) return "Must contain at least one number";
-                      if (!hasMinLength) return "Must be 6 characters long";
-                      return true;
-                    },
-                  }}
-                />
-                <div className="mt-4 space-y-2">
-                  <div className="text-sm text-gray-500">
-                    Status:{" "}
-                    {complexValid ? (
-                      <span className="text-green-600 font-medium">
-                        Verified ✓
-                      </span>
-                    ) : (
-                      "Awaiting verification"
-                    )}
-                  </div>
-                  <ul className="text-sm text-gray-500 space-y-1">
-                    <li>• Must contain A-F and 1-6</li>
-                    <li>• Case sensitive</li>
-                    <li>• Length: 6 characters</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-8 mt-16">
-          <h3 className="text-2xl font-semibold mb-6 text-center">
-            Localization Demos
-          </h3>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white/80 p-8 rounded-2xl shadow-xl border border-blue-100">
-              <h4 className="text-lg font-semibold mb-4">German (Deutsch)</h4>
-              <Captcha
-                type="mixed"
-                length={6}
-                i18n={{
-                  securityCheck: "Sicherheitsüberprüfung",
-                  listenToCaptcha: "CAPTCHA anhören",
-                  refreshCaptcha: "CAPTCHA neu laden",
-                  inputPlaceholder: "Code eingeben",
-                  pressSpaceToHearCode: "Leertaste: Code anhören",
-                  enterToValidate: "Enter: Prüfen",
-                  escToClear: "Esc: Löschen",
-                  verifyButton: "Prüfen",
-                  verificationSuccessful: "Erfolg!",
-                  attemptsRemaining: (n) => `${n} Versuche übrig`,
-                  captchaRequired: "Bitte CAPTCHA eingeben",
-                  minLength: (min) => `Mindestens ${min} Zeichen`,
-                  maxLength: (max) => `Maximal ${max} Zeichen`,
-                  invalidCharacters: (chars) => `Ungültige Zeichen: ${chars}`,
-                  customValidationFailed:
-                    "Benutzerdefinierte Validierung fehlgeschlagen",
-                  captchaDoesNotMatch: "CAPTCHA stimmt nicht überein",
-                }}
-                showSuccessAnimation
-                refreshable
-              />
-            </div>
-            <div className="bg-white/80 p-8 rounded-2xl shadow-xl border border-green-100">
-              <h4 className="text-lg font-semibold mb-4">Spanish (Español)</h4>
-              <Captcha
-                type="letters"
-                length={5}
-                i18n={{
-                  securityCheck: "Verificación de seguridad",
-                  listenToCaptcha: "Escuchar CAPTCHA",
-                  refreshCaptcha: "Actualizar CAPTCHA",
-                  inputPlaceholder: "Ingrese el código",
-                  pressSpaceToHearCode: "Espacio: escuchar el código",
-                  enterToValidate: "Enter: validar",
-                  escToClear: "Esc: limpiar",
-                  verifyButton: "Verificar",
-                  verificationSuccessful: "¡Éxito!",
-                  attemptsRemaining: (n) => `${n} intentos restantes`,
-                  captchaRequired: "Por favor ingrese el CAPTCHA",
-                  minLength: (min) => `Mínimo ${min} caracteres`,
-                  maxLength: (max) => `Máximo ${max} caracteres`,
-                  invalidCharacters: (chars) =>
-                    `Caracteres inválidos: ${chars}`,
-                  customValidationFailed: "Validación personalizada fallida",
-                  captchaDoesNotMatch: "El CAPTCHA no coincide",
-                }}
-                showSuccessAnimation
-                refreshable
-              />
-            </div>
-          </div>
+          <CaptchaPlayground />
         </div>
 
         <div
           id="documentation"
           className="bg-white rounded-2xl shadow-xl p-8 mb-16"
         >
-          <div className="space-y-12">
-            <section id="getting-started" className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Book className="w-6 h-6 text-blue-600" />
-                <h3 className="text-2xl font-bold">Getting Started</h3>
-              </div>
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold">Installation</h4>
-                <CodeBlock>npm install recaptz</CodeBlock>
-
-                <h4 className="text-lg font-semibold mt-6">Basic Usage</h4>
-                <CodeBlock>{`import { Captcha } from 'recaptz';
-
-function App() {
-  const handleValidate = (isValid: boolean) => {
-    if (isValid) {
-      console.log('CAPTCHA validated successfully');
-    }
-  };
-
-  return (
-    <Captcha
-      type="mixed"
-      length={6}
-      onValidate={handleValidate}
-    />
-  );
-}`}</CodeBlock>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Code className="w-6 h-6 text-purple-600" />
-                <h3 className="text-2xl font-bold">Props</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="py-4 px-4 font-semibold">Prop</th>
-                      <th className="py-4 px-4 font-semibold">Type</th>
-                      <th className="py-4 px-4 font-semibold">Default</th>
-                      <th className="py-4 px-4 font-semibold">Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>type</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>'numbers' | 'letters' | 'mixed'</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>'mixed'</code>
-                      </td>
-                      <td className="py-4 px-4">Type of CAPTCHA to generate</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>length</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>number</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>6</code>
-                      </td>
-                      <td className="py-4 px-4">Length of CAPTCHA text</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>onChange</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>{"(value: string) => void"}</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">Callback when input changes</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>onValidate</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>{"(isValid: boolean) => void"}</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        Callback when validation occurs
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>className</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>string</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>''</code>
-                      </td>
-                      <td className="py-4 px-4">Additional CSS classes</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>refreshable</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>boolean</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>true</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        Whether CAPTCHA can be refreshed
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>caseSensitive</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>boolean</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>false</code>
-                      </td>
-                      <td className="py-4 px-4">Case-sensitive validation</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>customCharacters</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>string</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">Custom character set</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>customStyles</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>React.CSSProperties</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">Custom inline styles</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>validationRules</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>ValidationRules</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">Custom validation rules</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>darkMode</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>boolean</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>false</code>
-                      </td>
-                      <td className="py-4 px-4">Enable dark mode theme</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>autoFocus</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>boolean</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>false</code>
-                      </td>
-                      <td className="py-4 px-4">Auto-focus the input field</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>showSuccessAnimation</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>boolean</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>false</code>
-                      </td>
-                      <td className="py-4 px-4">Show success animation</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>refreshInterval</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>number</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        Auto-refresh interval in seconds
-                      </td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>maxAttempts</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>number</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">Maximum validation attempts</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-4 px-4">
-                        <code>inputButtonStyle</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>string</code>
-                      </td>
-                      <td className="py-4 px-4">
-                        <code>-</code>
-                      </td>
-                      <td className="py-4 px-4">Input button styles</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
-                <h3 className="text-2xl font-bold">Validation Rules</h3>
-              </div>
-              <div className="space-y-4">
-                <p>
-                  The <code>validationRules</code> prop accepts an object with
-                  the following properties:
-                </p>
-                <CodeBlock>{`interface ValidationRules {
-  minLength?: number;
-  maxLength?: number;
-  allowedCharacters?: string;
-  required?: boolean;
-  caseSensitive?: boolean;
-  customValidator?: (value: string) => boolean | string;
-}`}</CodeBlock>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Palette className="w-6 h-6 text-orange-600" />
-                <h3 className="text-2xl font-bold">Styling</h3>
-              </div>
-              <div className="space-y-4">
-                <p>
-                  Customize the appearance using the <code>className</code> and{" "}
-                  <code>customStyles</code> props:
-                </p>
-                <CodeBlock>{`<Captcha
-  className="my-custom-class"
-  customStyles={{
-    backgroundColor: '#f8f9fa',
-    borderRadius: '8px',
-    padding: '20px'
-  }}
-  darkMode={true}
-/>`}</CodeBlock>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Keyboard className="w-6 h-6 text-indigo-600" />
-                <h3 className="text-2xl font-bold">Keyboard Shortcuts</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <kbd className="px-2 py-1 bg-white rounded-sm border shadow-xs">
-                    Space
-                  </kbd>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Hear the CAPTCHA code
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <kbd className="px-2 py-1 bg-white rounded-sm border shadow-xs">
-                    Enter
-                  </kbd>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Validate the input
-                  </p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <kbd className="px-2 py-1 bg-white rounded-sm border shadow-xs">
-                    Escape
-                  </kbd>
-                  <p className="mt-2 text-sm text-gray-600">Clear the input</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="flex items-center gap-3">
-                <FileCode2 className="w-6 h-6 text-blue-600" />
-                <h3 className="text-2xl font-bold">TypeScript Support</h3>
-              </div>
-              <div className="space-y-4">
-                <p>Import types directly from the package:</p>
-                <CodeBlock>{`import type { CaptchaProps, ValidationRules } from 'recaptz';`}</CodeBlock>
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-                <h3 className="text-2xl font-bold">Error Handling</h3>
-              </div>
-              <div className="space-y-4">
-                <p>
-                  The component handles various error cases and provides
-                  feedback:
-                </p>
-                <ul className="list-disc list-inside space-y-2">
-                  <li>Invalid input length</li>
-                  <li>Character mismatch</li>
-                  <li>Required field validation</li>
-                  <li>Custom validation rules</li>
-                </ul>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-16">
           <div className="text-center space-y-4 mb-8">
             <h3 className="text-2xl font-bold">Browser Support</h3>
             <p className="text-gray-600">

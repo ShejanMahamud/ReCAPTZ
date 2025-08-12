@@ -1,7 +1,15 @@
+// Components
 export { Captcha } from "./components/Captcha";
-export { useCaptcha } from "./context/CaptchaContext";
+export { CaptchaAttempts } from "./components/CaptchaAttempts";
+export { CaptchaCanvas } from "./components/CaptchaCanvas";
+export { CaptchaInput } from "./components/CaptchaInput";
+export { CaptchaSuccess } from "./components/CaptchaSuccess";
+export { CaptchaTimer } from "./components/CaptchaTimer";
 
-// Hooks-based API for edge cases
+// Context
+export { CaptchaProvider, useCaptcha } from "./context/CaptchaContext";
+
+// Hooks
 export {
   useCaptchaAttempts,
   useCaptchaAudio,
@@ -12,18 +20,23 @@ export {
   useCaptchaWithInterval,
 } from "./hooks";
 
+// Configuration API
+export { modeManager as configureReCAPTZ } from "./utils/captchaMode";
+
+// Types (only user-facing types)
 export type {
-  CaptchaAttempts,
+  CaptchaAttempts as CaptchaAttemptsHook,
   CaptchaAudio,
   CaptchaConfig,
   CaptchaGenerator,
   CaptchaI18n,
   CaptchaProps,
   CaptchaState,
+  CaptchaTheme,
   CaptchaType,
   CaptchaValidator,
   ConfettiOptions,
   ValidationRules,
-} from "./types/index";
+} from "./types";
 
 import "./index.css";

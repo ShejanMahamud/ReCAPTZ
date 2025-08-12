@@ -1,4 +1,4 @@
-export type CaptchaType = "numbers" | "letters" | "mixed";
+export type CaptchaType = "numbers" | "letters" | "mixed" | "custom";
 
 export type CaptchaTheme = "light" | "dark" | "auto";
 
@@ -47,8 +47,67 @@ export interface ConfettiOptions {
   duration?: number;
 }
 
+// Internal server-side ReCAPTZ types (not exposed to users)
+export interface ReCAPTZConfig {
+  baseUrl: string;
+  timeout?: number;
+  retries?: number;
+  debug?: boolean;
+}
+
+export interface ServerCaptchaSession {
+  sessionToken: string;
+  challengeText: string;
+  expiresAt: string;
+  config: {
+    type: CaptchaType;
+    length: number;
+    caseSensitive: boolean;
+    maxAttempts: number;
+    expiryMinutes: number;
+    enableAudio: boolean;
+    showSuccessAnimation: boolean;
+    showConfetti: boolean;
+    darkMode: boolean;
+    rtl: boolean;
+    refreshable: boolean;
+    autoFocus: boolean;
+  };
+  maxAttempts: number;
+  attemptsRemaining: number;
+}
+
+export interface ServerCaptchaVerification {
+  success: boolean;
+  verified: boolean;
+  sessionToken: string;
+  attemptsRemaining: number;
+  message?: string;
+  errorMessage?: string;
+  analytics?: {
+    timeTaken: number;
+    difficulty: number;
+    inputMethod: string;
+  };
+}
+
+export interface ServerCaptchaAudio {
+  audioText: string;
+  audioConfig: {
+    language: string;
+    rate: number;
+    pitch: number;
+    volume: number;
+    spellOut: boolean;
+  };
+  supportedLanguages: string[];
+}
+
 export interface CaptchaProps {
+  // User-facing props only
   enableAudio?: boolean;
+  /** Disable the space key to hear code functionality while keeping audio available via button */
+  disableSpaceToHear?: boolean;
   type?: CaptchaType;
   length?: number;
   inputButtonStyle?: string;
@@ -84,21 +143,24 @@ export interface CaptchaProps {
   confettiOptions?: ConfettiOptions;
 }
 
-// Context type for the existing useCaptcha hook
+// Internal context type (simplified for internal use)
 export interface CaptchaContextType {
   captchaText: string;
   userInput: string;
   isValid: boolean;
   error: string | null;
-  refresh: () => void;
+  refresh: () => Promise<void>;
   setUserInput: (input: string) => void;
-  validate: () => boolean;
+  validate: () => Promise<boolean>;
   currentAttempts: number;
   maxAttempts: number | undefined;
   i18n: CaptchaI18n;
+  isLoading: boolean;
+  sessionToken: string | null;
+  playAudio: () => Promise<void>;
 }
 
-// Configuration for hooks-based API
+// Configuration for hooks-based API (simplified)
 export interface CaptchaConfig {
   type?: CaptchaType;
   length?: number;
@@ -112,23 +174,26 @@ export interface CaptchaConfig {
 // Return type for useCaptchaGenerator hook
 export interface CaptchaGenerator {
   captchaText: string;
-  refresh: () => void;
-  generateNew: (config?: Partial<CaptchaConfig>) => string;
+  refresh: () => Promise<void>;
+  generateNew: (config?: Partial<CaptchaConfig>) => Promise<string>;
+  isLoading: boolean;
+  sessionToken: string | null;
 }
 
 // Return type for useCaptchaValidator hook
 export interface CaptchaValidator {
-  validate: (input: string, captcha: string) => boolean;
+  validate: (input: string, sessionToken: string) => Promise<boolean>;
   validateWithRules: (
     input: string,
-    captcha: string,
+    sessionToken: string,
     rules?: ValidationRules
-  ) => {
+  ) => Promise<{
     isValid: boolean;
     error: string | null;
-  };
+  }>;
   error: string | null;
   isValid: boolean;
+  isLoading: boolean;
 }
 
 // Return type for useCaptchaAttempts hook
@@ -144,16 +209,19 @@ export interface CaptchaAttempts {
 // Return type for useCaptchaAudio hook
 export interface CaptchaAudio {
   speak: (text: string) => void;
+  playServerAudio: (sessionToken: string) => Promise<void>;
   isSupported: boolean;
   isPlaying: boolean;
   stop: () => void;
+  isLoading: boolean;
 }
 
 // Return type for comprehensive useCaptchaState hook
 export interface CaptchaState {
   // Generator state
   captchaText: string;
-  refresh: () => void;
+  refresh: () => Promise<void>;
+  sessionToken: string | null;
 
   // Input state
   userInput: string;
@@ -162,7 +230,7 @@ export interface CaptchaState {
   // Validation state
   isValid: boolean;
   error: string | null;
-  validate: () => boolean;
+  validate: () => Promise<boolean>;
 
   // Attempts state
   attempts: number;
@@ -172,8 +240,13 @@ export interface CaptchaState {
 
   // Audio functionality
   speakCaptcha: () => void;
+  playServerAudio: () => Promise<void>;
   isAudioSupported: boolean;
   isAudioPlaying: boolean;
+
+  // Loading states
+  isLoading: boolean;
+  isValidating: boolean;
 
   // Configuration
   config: CaptchaConfig;
