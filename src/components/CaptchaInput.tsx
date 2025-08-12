@@ -9,6 +9,7 @@ interface CaptchaInputProps {
   darkMode?: boolean;
   i18n?: CaptchaI18n;
   disabled?: boolean;
+  disableSpaceToHear?: boolean;
 }
 
 export const CaptchaInput: React.FC<CaptchaInputProps> = ({
@@ -17,6 +18,7 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
   darkMode = false,
   i18n = {},
   disabled = false,
+  disableSpaceToHear = false,
 }) => {
   const {
     setUserInput,
@@ -34,7 +36,11 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
     const handleKeyPress = async (e: KeyboardEvent) => {
       if (disabled || isLoading) return;
 
-      if (e.code === "Space" && document.activeElement !== inputRef.current) {
+      if (
+        e.code === "Space" &&
+        document.activeElement !== inputRef.current &&
+        !disableSpaceToHear
+      ) {
         e.preventDefault();
         await handleSpeakCaptcha();
       }
@@ -49,7 +55,7 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [captchaText, disabled, isLoading]);
+  }, [captchaText, disabled, isLoading, disableSpaceToHear]);
 
   const handleSpeakCaptcha = async () => {
     if (disabled || isLoading || isSpeaking) return;

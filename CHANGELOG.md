@@ -2,7 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.9] - 2024-01-20
+## [1.3.2] - 2025-08-12
+
+### 🎉 What's New
+
+**🔇 Enhanced Audio Control**
+
+- Added `disableSpaceToHear` prop to prevent spacebar from triggering audio playback
+- Better control over audio interactions for improved user experience
+- Customizable audio behavior for different use cases
+
+**🖥️ Server-Side CAPTCHA Support**
+
+- Full server-side CAPTCHA generation and validation
+- Enhanced security with backend verification
+- Improved protection against client-side manipulation
+- Scalable solution for enterprise applications
+
+### 🛠️ Improvements
+
+**🎛️ Better Accessibility Control**
+
+- More granular control over keyboard interactions
+- Customizable audio trigger behavior
+- Enhanced user experience for different accessibility needs
+
+**🔒 Enhanced Security Architecture**
+
+- Server-side validation ensures CAPTCHA integrity
+- Reduced client-side attack surface
+- Better protection against automated attacks
+- Enterprise-ready security features
+
+### 💡 Why Upgrade?
+
+✅ **Better Audio Control**: Fine-tune audio interactions with the new `disableSpaceToHear` prop  
+✅ **Enhanced Security**: Server-side validation provides enterprise-level protection  
+✅ **Improved Accessibility**: More control over keyboard and audio interactions  
+✅ **Scalable Solution**: Perfect for applications requiring robust CAPTCHA validation
+
+---
+
+## [1.2.9] - 2025-07-20
 
 ### 🎉 What's New for You
 

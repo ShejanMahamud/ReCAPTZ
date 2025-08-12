@@ -20,6 +20,9 @@ export {
   useCaptchaWithInterval,
 } from "./hooks";
 
+// Configuration API
+export { modeManager as configureReCAPTZ } from "./utils/captchaMode";
+
 // Types (only user-facing types)
 export type {
   CaptchaAttempts as CaptchaAttemptsHook,

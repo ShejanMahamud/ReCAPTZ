@@ -97,6 +97,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   refreshable = true,
   darkMode = false,
   enableAudio = true,
+  disableSpaceToHear = false,
   showSuccessAnimation = true,
   refreshInterval = 0,
   i18n = {},
@@ -304,14 +305,15 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         <div
           className={`${
             isFocusVisible ? "border-2 border-blue-500 p-3" : "p-3"
-          }`}
+          } ${inputButtonStyle}`}
         >
           <CaptchaInput
+            className="w-full"
             onChange={onChange}
             darkMode={darkMode}
-            className={inputButtonStyle}
-            i18n={i18n}
-            disabled={shouldDisableInteraction}
+            i18n={mergedI18n}
+            disabled={isLoading}
+            disableSpaceToHear={disableSpaceToHear}
           />
         </div>
       </div>
@@ -331,6 +333,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         } ${isHighSeverityError ? "opacity-60" : ""}`}
       >
         {enableAudio &&
+          !disableSpaceToHear &&
           !isHighSeverityError &&
           ` ${mergedI18n.pressSpaceToHearCode} •`}{" "}
         {!isHighSeverityError && `${mergedI18n.enterToValidate} •`}

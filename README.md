@@ -12,7 +12,6 @@ A beautiful, customizable, and secure CAPTCHA component with multiple verificati
 🛡️ **Secure by Design** - Built with security best practices and customizable validation rules  
 ♿ **Accessibility First** - Screen reader support, keyboard navigation, and audio feedback  
 ⚡ **Developer Friendly** - TypeScript support, comprehensive documentation, and easy integration  
-🚀 **Zero Dependencies** - Minimal bundle size with no external dependencies  
 🎨 **Beautiful Design** - Modern UI that works perfectly on mobile and desktop  
 🌍 **Internationalization** - Built-in support for multiple languages and RTL layouts
 
@@ -21,6 +20,24 @@ A beautiful, customizable, and secure CAPTCHA component with multiple verificati
 ```bash
 npm install recaptz
 ```
+
+## 🚀 New! Automatic Server-Side Security
+
+**🎉 ReCAPTZ now includes built-in server-side validation with zero configuration required!**
+
+### ✨ What's New:
+
+- **🔒 Server-Side Validation** - Enhanced security with backend validation
+- **🌐 IP Detection & Rate Limiting** - Automatic protection against abuse
+- **💾 Session-Based CAPTCHAs** - Secure session management
+- **🔄 Automatic Fallback** - Seamlessly falls back to client-side if server is unavailable
+- **⚡ Zero Configuration** - Works out of the box, no setup required
+
+### 🛡️ How It Works:
+
+ReCAPTZ automatically connects to our secure server infrastructure to provide enhanced protection. If the server is temporarily unavailable, it automatically falls back to client-side validation ensuring your application never breaks.
+
+**No configuration needed - just install and use!**
 
 ## 🚀 Quick Start
 
@@ -566,6 +583,16 @@ ReCAPTZ is built with accessibility as a priority:
     escToClear: "Press Escape to clear",
   }}
 />
+
+// Disable space key for audio while keeping audio button available
+<Captcha
+  enableAudio={true}
+  disableSpaceToHear={true}
+  i18n={{
+    enterToValidate: "Press Enter to validate",
+    escToClear: "Press Escape to clear",
+  }}
+/>
 ```
 
 ### Keyboard Shortcuts
@@ -599,6 +626,7 @@ ReCAPTZ is built with accessibility as a priority:
 | `darkMode`             | `boolean`                           | `false`   | Enable dark mode theme             |
 | `autoFocus`            | `boolean`                           | `false`   | Auto-focus the input field         |
 | `enableAudio`          | `boolean`                           | `true`    | Enable audio support               |
+| `disableSpaceToHear`   | `boolean`                           | `false`   | Disable space key audio feature    |
 | `showSuccessAnimation` | `boolean`                           | `false`   | Show success animation             |
 | `showConfetti`         | `boolean`                           | `false`   | Show confetti on success           |
 | `confettiOptions`      | `ConfettiOptions`                   | `{}`      | Confetti configuration             |

@@ -10,7 +10,7 @@ export class CaptchaError extends Error {
   constructor(
     message: string,
     public type: string,
-    public details?: any,
+    public details?: unknown,
     public severity: "low" | "medium" | "high" = "medium",
     public retryable = true
   ) {
@@ -226,7 +226,7 @@ export class ReCAPTZClient {
   private async makeRequest(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<any> {
+  ): Promise<unknown> {
     const url = `${this.baseUrl}${endpoint}`;
     const config: RequestInit = {
       headers: {
@@ -415,11 +415,45 @@ export class ReCAPTZClient {
 // Default client instance
 let defaultClient: ReCAPTZClient | null = null;
 
+// Official ReCAPTZ server endpoint
+const DEFAULT_SERVER_URL = "https://recaptz-server.vercel.app/api";
+
 export const getDefaultClient = (): ReCAPTZClient => {
   if (!defaultClient) {
+    // Get server URL from runtime environment instead of build-time
+    const getServerUrl = (): string => {
+      // Check various environment variable sources at runtime
+      if (typeof window !== "undefined") {
+        const windowObj = window as unknown as Record<string, unknown>;
+        if (
+          windowObj.RECAPTZ_API_URL &&
+          typeof windowObj.RECAPTZ_API_URL === "string"
+        ) {
+          return windowObj.RECAPTZ_API_URL;
+        }
+      }
+
+      // Return official server as default
+      return DEFAULT_SERVER_URL;
+    };
+
+    // Check if we're in development mode
+    const isDev = (): boolean => {
+      try {
+        // Check for development indicators
+        if (typeof window !== "undefined") {
+          const windowObj = window as unknown as Record<string, unknown>;
+          return Boolean(windowObj.__DEV__ || windowObj.webpackHotUpdate);
+        }
+        return false;
+      } catch {
+        return false;
+      }
+    };
+
     defaultClient = new ReCAPTZClient({
-      baseUrl: import.meta.env.VITE_SERVER_URL,
-      debug: import.meta.env.DEV || false,
+      baseUrl: getServerUrl(),
+      debug: isDev(),
     });
   }
   return defaultClient;

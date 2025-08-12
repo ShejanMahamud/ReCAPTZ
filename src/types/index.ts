@@ -106,6 +106,8 @@ export interface ServerCaptchaAudio {
 export interface CaptchaProps {
   // User-facing props only
   enableAudio?: boolean;
+  /** Disable the space key to hear code functionality while keeping audio available via button */
+  disableSpaceToHear?: boolean;
   type?: CaptchaType;
   length?: number;
   inputButtonStyle?: string;
