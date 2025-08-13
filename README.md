@@ -1,48 +1,30 @@
-# 🛡️ ReCAPTZ
+# ReCAPTZ
 
-**The Modern CAPTCHA Solution for React Applications**
-
-A beautiful, customizable, and secure CAPTCHA component with multiple verification types, perfect for protecting your forms and user interactions.
+A modern, customizable CAPTCHA component for React applications with TypeScript support and accessibility features.
 
 [![npm version](https://badge.fury.io/js/recaptz.svg)](https://badge.fury.io/js/recaptz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## ✨ Why Choose ReCAPTZ?
+## Features
 
-🛡️ **Secure by Design** - Built with security best practices and customizable validation rules  
-♿ **Accessibility First** - Screen reader support, keyboard navigation, and audio feedback  
-⚡ **Developer Friendly** - TypeScript support, comprehensive documentation, and easy integration  
-🎨 **Beautiful Design** - Modern UI that works perfectly on mobile and desktop  
-🌍 **Internationalization** - Built-in support for multiple languages and RTL layouts
+- **Security**: Built-in server-side validation with automatic fallback to client-side
+- **Accessibility**: Screen reader support, keyboard navigation, and audio feedback
+- **TypeScript**: Full TypeScript support with comprehensive type definitions
+- **Customizable**: Multiple CAPTCHA types, themes, and validation rules
+- **Internationalization**: Multi-language support with RTL layout compatibility
+- **Mobile-Friendly**: Responsive design optimized for all devices
 
-## 📦 Installation
+## Installation
 
 ```bash
 npm install recaptz
 ```
 
-## 🚀 New! Automatic Server-Side Security
-
-**🎉 ReCAPTZ now includes built-in server-side validation with zero configuration required!**
-
-### ✨ What's New:
-
-- **🔒 Server-Side Validation** - Enhanced security with backend validation
-- **🌐 IP Detection & Rate Limiting** - Automatic protection against abuse
-- **💾 Session-Based CAPTCHAs** - Secure session management
-- **🔄 Automatic Fallback** - Seamlessly falls back to client-side if server is unavailable
-- **⚡ Zero Configuration** - Works out of the box, no setup required
-
-### 🛡️ How It Works:
-
-ReCAPTZ automatically connects to our secure server infrastructure to provide enhanced protection. If the server is temporarily unavailable, it automatically falls back to client-side validation ensuring your application never breaks.
-
-**No configuration needed - just install and use!**
-
-## 🚀 Quick Start
+## Quick Start
 
 ```tsx
 import { Captcha } from "recaptz";
+import { useState } from "react";
 
 function LoginForm() {
   const [verified, setVerified] = useState(false);
@@ -68,15 +50,15 @@ function LoginForm() {
 }
 ```
 
-## 🎯 CAPTCHA Types & Basic Usage
+## CAPTCHA Types
 
-### Standard CAPTCHA Types
+### Basic Types
 
 ```tsx
-// Numbers only (great for quick verification)
+// Numbers only
 <Captcha type="numbers" length={4} />
 
-// Letters only (alphabetic challenge)
+// Letters only
 <Captcha type="letters" length={6} />
 
 // Mixed characters (letters + numbers)
@@ -90,23 +72,15 @@ function LoginForm() {
 />
 ```
 
-### Enhanced Features
+### Advanced Configuration
 
 ```tsx
-// Timed CAPTCHA with auto-refresh
+// Timed CAPTCHA with attempt limits
 <Captcha
   type="mixed"
   length={5}
   refreshInterval={30}
   maxAttempts={3}
-/>
-
-// Dark mode with success animation
-<Captcha
-  type="letters"
-  darkMode={true}
-  showSuccessAnimation={true}
-  showConfetti={true}
 />
 
 // Accessible CAPTCHA with audio support
@@ -117,24 +91,9 @@ function LoginForm() {
 />
 ```
 
-## 🌍 Real-World Integration Examples
+## Usage Examples
 
-### 1. Login Form Protection
-
-```tsx
-<Captcha
-  type="numbers"
-  length={4}
-  showSuccessAnimation
-  maxAttempts={3}
-  validationRules={{
-    required: true,
-    allowedCharacters: "0123456789",
-  }}
-/>
-```
-
-### 2. Contact Form Spam Prevention
+### Contact Form Protection
 
 ```tsx
 <Captcha
@@ -150,24 +109,7 @@ function LoginForm() {
 />
 ```
 
-### 3. User Registration Security
-
-```tsx
-<Captcha
-  type="mixed"
-  length={6}
-  caseSensitive={false}
-  showSuccessAnimation
-  maxAttempts={5}
-  validationRules={{
-    required: true,
-    minLength: 6,
-    maxLength: 6,
-  }}
-/>
-```
-
-### 4. E-commerce Checkout Protection
+### E-commerce Checkout
 
 ```tsx
 <Captcha
@@ -189,24 +131,9 @@ function LoginForm() {
 />
 ```
 
-### 5. Password Reset Protection
+## Custom Hook Usage
 
-```tsx
-<Captcha
-  type="numbers"
-  length={6}
-  refreshInterval={60}
-  maxAttempts={3}
-  validationRules={{
-    required: true,
-    allowedCharacters: "0123456789",
-  }}
-/>
-```
-
-## 🎣 Custom Hook Usage
-
-Build your own CAPTCHA UI using the `useCaptchaState` hook:
+Build custom CAPTCHA interfaces using the `useCaptchaState` hook:
 
 ```tsx
 import { useCaptchaState, CaptchaProvider } from "recaptz";
@@ -224,36 +151,26 @@ function CustomCaptcha() {
 
   return (
     <div className="custom-captcha">
-      {/* Display CAPTCHA */}
       <div className="captcha-display">{captchaText}</div>
 
-      {/* Input field */}
       <input
         type="text"
         value={userInput}
         onChange={(e) => setUserInput(e.target.value)}
         placeholder="Enter the code"
-        className="captcha-input"
       />
 
-      {/* Action buttons */}
       <div className="captcha-actions">
-        <button onClick={validate} className="verify-btn">
-          Verify
-        </button>
-        <button onClick={refresh} className="refresh-btn">
-          Refresh
-        </button>
+        <button onClick={validate}>Verify</button>
+        <button onClick={refresh}>Refresh</button>
       </div>
 
-      {/* Status display */}
-      {isValid && <div className="success">✅ Verified!</div>}
-      {error && <div className="error">❌ {error}</div>}
+      {isValid && <div className="success">Verified!</div>}
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }
 
-// Wrap with provider
 function App() {
   return (
     <CaptchaProvider type="mixed" length={6}>
@@ -263,7 +180,7 @@ function App() {
 }
 ```
 
-### Hook Return Values
+### Hook API
 
 The `useCaptchaState` hook returns:
 
@@ -279,7 +196,9 @@ interface CaptchaState {
 }
 ```
 
-## 🔧 Advanced Validation & Rules
+## Validation Rules
+
+Configure custom validation with the `ValidationRules` interface:
 
 ```tsx
 interface ValidationRules {
@@ -309,12 +228,11 @@ interface ValidationRules {
 />;
 ```
 
-## 🎨 Styling & Theming
+## Styling and Theming
 
-### Basic Styling Options
+### Custom Styles
 
 ```tsx
-// Light theme with custom styles
 <Captcha
   className="my-custom-captcha"
   customStyles={{
@@ -361,163 +279,92 @@ interface ValidationRules {
   cursor: pointer;
   transition: all 0.2s;
 }
-
-.my-custom-captcha button:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-}
 ```
 
-## 🎉 Success Animations & Confetti
+## Success Animations
 
-### Confetti Configuration
+Configure success animations and confetti effects:
 
 ```tsx
 interface ConfettiOptions {
-  particleCount?: number;  // Number of particles (default: 100)
-  spread?: number;         // Spread angle in degrees (default: 45)
+  particleCount?: number; // Number of particles (default: 100)
+  spread?: number; // Spread angle in degrees (default: 45)
   origin?: { x?: number; y?: number }; // Origin point (default: center)
-  colors?: string[];       // Custom colors array
-  gravity?: number;        // Gravity effect (default: 1)
-  scalar?: number;         // Particle size multiplier (default: 1)
-  duration?: number;       // Animation duration in ms (default: 3000)
+  colors?: string[]; // Custom colors array
+  gravity?: number; // Gravity effect (default: 1)
+  scalar?: number; // Particle size multiplier (default: 1)
+  duration?: number; // Animation duration in ms (default: 3000)
 }
 
-// Elaborate celebration
 <Captcha
   showConfetti={true}
   confettiOptions={{
     particleCount: 200,
     spread: 70,
-    colors: ['#ff0000', '#00ff00', '#0000ff'],
+    colors: ["#ff0000", "#00ff00", "#0000ff"],
     duration: 5000,
     gravity: 0.8,
-    scalar: 1.2
+    scalar: 1.2,
   }}
-/>
-
-// Minimal confetti
-<Captcha
-  showConfetti={true}
-  confettiOptions={{
-    particleCount: 50,
-    spread: 30,
-    colors: ['#gold', '#silver'],
-    duration: 2000
-  }}
-/>
+/>;
 ```
 
-## 🔧 Custom Components & Theming
+## Custom Components
 
-Replace default components with your own implementations:
+Replace default components with custom implementations:
 
 ```tsx
-// Custom loading spinner
 <Captcha
   loadingComponent={
     <div className="flex items-center gap-2">
       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
       <span>Generating CAPTCHA...</span>
-        </div>
+    </div>
   }
-/>
-
-// Custom success message
-<Captcha
   successComponent={
     <div className="flex items-center gap-2 text-green-600">
-      <CheckCircle className="w-5 h-5" />
       <span className="font-semibold">Verification Successful!</span>
-        </div>
+    </div>
   }
-/>
-
-// Custom error display
-<Captcha
   errorComponent={({ error, severity }) => (
-    <div className={`p-3 rounded-lg ${
-      severity === 'high' ? 'bg-red-100 text-red-800' :
-      severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-      'bg-blue-100 text-blue-800'
-    }`}>
-      <AlertTriangle className="w-4 h-4 inline mr-2" />
+    <div
+      className={`p-3 rounded-lg ${
+        severity === "high"
+          ? "bg-red-100 text-red-800"
+          : severity === "medium"
+          ? "bg-yellow-100 text-yellow-800"
+          : "bg-blue-100 text-blue-800"
+      }`}
+    >
       {error}
     </div>
   )}
 />
 ```
 
-## 📊 Event Handling & Analytics
+## Event Handling
 
-Comprehensive event tracking for analytics and debugging:
+Handle CAPTCHA events for analytics and debugging:
 
 ```tsx
-const [events, setEvents] = useState([]);
-
 const handleCaptchaEvents = {
-  onChange: (value) => {
-    console.log("Input changed:", value);
-    setEvents((prev) => [
-      ...prev,
-      { type: "input", value, timestamp: Date.now() },
-    ]);
-  },
-
-  onValidate: (isValid) => {
-    console.log("Validation result:", isValid);
-    setEvents((prev) => [
-      ...prev,
-      {
-        type: "validation",
-        success: isValid,
-        timestamp: Date.now(),
-      },
-    ]);
-  },
-
-  onRefresh: () => {
-    console.log("CAPTCHA refreshed");
-    setEvents((prev) => [...prev, { type: "refresh", timestamp: Date.now() }]);
-  },
-
-  onAudioPlay: () => {
-    console.log("Audio played");
-    setEvents((prev) => [...prev, { type: "audio", timestamp: Date.now() }]);
-  },
-
-  onError: (error) => {
-    console.error("CAPTCHA error:", error);
-    setEvents((prev) => [
-      ...prev,
-      {
-        type: "error",
-        message: error,
-        timestamp: Date.now(),
-      },
-    ]);
-  },
-
-  onFail: () => {
-    console.log("Validation failed");
-    setEvents((prev) => [...prev, { type: "fail", timestamp: Date.now() }]);
-  },
-
-  onSuccess: () => {
-    console.log("Validation succeeded");
-    setEvents((prev) => [...prev, { type: "success", timestamp: Date.now() }]);
-  },
+  onChange: (value) => console.log("Input changed:", value),
+  onValidate: (isValid) => console.log("Validation result:", isValid),
+  onRefresh: () => console.log("CAPTCHA refreshed"),
+  onAudioPlay: () => console.log("Audio played"),
+  onError: (error) => console.error("CAPTCHA error:", error),
+  onFail: () => console.log("Validation failed"),
+  onSuccess: () => console.log("Validation succeeded"),
 };
 
 <Captcha
   {...handleCaptchaEvents}
   maxAttempts={3}
   showSuccessAnimation={true}
-  showConfetti={true}
 />;
 ```
 
-## 🌍 Internationalization & Accessibility
+## Internationalization
 
 ### Multi-Language Support
 
@@ -536,20 +383,6 @@ const handleCaptchaEvents = {
   }}
 />
 
-// Spanish
-<Captcha
-  i18n={{
-    securityCheck: "Verificación de seguridad",
-    listenToCaptcha: "Escuchar CAPTCHA",
-    refreshCaptcha: "Actualizar CAPTCHA",
-    inputPlaceholder: "Ingrese el código",
-    verifyButton: "Verificar",
-    verificationSuccessful: "¡Éxito!",
-    captchaRequired: "Por favor ingrese el CAPTCHA",
-    captchaDoesNotMatch: "El CAPTCHA no coincide",
-  }}
-/>
-
 // Arabic (RTL)
 <Captcha
   rtl={true}
@@ -562,15 +395,23 @@ const handleCaptchaEvents = {
 />
 ```
 
-### Accessibility Features
+## Accessibility
 
-ReCAPTZ is built with accessibility as a priority:
+ReCAPTZ includes comprehensive accessibility features:
 
-- **🔊 Audio Support** - Text-to-speech for visually impaired users
-- **⌨️ Keyboard Navigation** - Full keyboard support with proper focus management
-- **🏷️ ARIA Labels** - Comprehensive screen reader support
-- **🎨 High Contrast** - Works with high contrast and dark modes
-- **📱 Mobile Friendly** - Touch-optimized for mobile devices
+- **Audio Support**: Text-to-speech for visually impaired users
+- **Keyboard Navigation**: Full keyboard support with proper focus management
+- **Screen Reader Support**: ARIA labels and semantic markup
+- **High Contrast**: Compatible with high contrast and dark modes
+- **Mobile Optimization**: Touch-optimized interface
+
+### Keyboard Shortcuts
+
+| Key    | Action                |
+| ------ | --------------------- |
+| Space  | Hear the CAPTCHA code |
+| Enter  | Validate the input    |
+| Escape | Clear the input       |
 
 ```tsx
 // Enable all accessibility features
@@ -583,29 +424,11 @@ ReCAPTZ is built with accessibility as a priority:
     escToClear: "Press Escape to clear",
   }}
 />
-
-// Disable space key for audio while keeping audio button available
-<Captcha
-  enableAudio={true}
-  disableSpaceToHear={true}
-  i18n={{
-    enterToValidate: "Press Enter to validate",
-    escToClear: "Press Escape to clear",
-  }}
-/>
 ```
 
-### Keyboard Shortcuts
+## API Reference
 
-| Key      | Action                |
-| -------- | --------------------- |
-| `Space`  | Hear the CAPTCHA code |
-| `Enter`  | Validate the input    |
-| `Escape` | Clear the input       |
-
-## 📋 Complete API Reference
-
-| Prop                   | Type                                | Default   | Description                        |
+| Property               | Type                                | Default   | Description                        |
 | ---------------------- | ----------------------------------- | --------- | ---------------------------------- |
 | `type`                 | `'numbers' \| 'letters' \| 'mixed'` | `'mixed'` | Type of CAPTCHA to generate        |
 | `length`               | `number`                            | `6`       | Length of CAPTCHA text             |
@@ -639,35 +462,9 @@ ReCAPTZ is built with accessibility as a priority:
 | `errorComponent`       | `React.ReactNode`                   | -         | Custom error component             |
 | `theme`                | `CaptchaTheme`                      | -         | Custom theme configuration         |
 
-## 🛠️ Implementation Best Practices
+## TypeScript Support
 
-### 1. **Context-Appropriate Configuration**
-
-Adjust difficulty and type based on the sensitivity of the action:
-
-- **Login forms**: Simple numbers (4 digits)
-- **Registration**: Mixed characters (6 length)
-- **High-value transactions**: Custom validation with complex rules
-
-### 2. **Accessibility Considerations**
-
-Always enable audio support and provide clear instructions:
-
-```tsx
-<Captcha enableAudio={true} autoFocus={true} />
-```
-
-### 3. **Security & UX Balance**
-
-Use appropriate attempt limits and timeouts:
-
-```tsx
-<Captcha maxAttempts={3} refreshInterval={30} />
-```
-
-## 📦 TypeScript Support
-
-Full TypeScript support with comprehensive type definitions:
+Full TypeScript definitions are included:
 
 ```tsx
 import type { CaptchaProps, ValidationRules, I18nLabels } from "recaptz";
@@ -687,9 +484,7 @@ const labels: I18nLabels = {
 };
 ```
 
-## 🌐 Browser Support
-
-Works seamlessly across all modern browsers:
+## Browser Support
 
 - Chrome (Latest)
 - Firefox (Latest)
@@ -697,19 +492,47 @@ Works seamlessly across all modern browsers:
 - Edge (Latest)
 - Opera (Latest)
 
-## 🤝 Contributing
+## Server-Side Integration
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+ReCAPTZ includes automatic server-side validation with zero configuration. Features include:
 
-### Development Setup
+- Server-side validation for enhanced security
+- IP detection and rate limiting
+- Session-based CAPTCHA management
+- Automatic fallback to client-side validation
+- No setup required
+
+## Best Practices
+
+### Security Configuration
+
+Choose appropriate settings based on the sensitivity of your forms:
+
+- **Login forms**: `type="numbers"`, `length={4}`
+- **Registration**: `type="mixed"`, `length={6}`
+- **High-value transactions**: Custom validation with complex rules
+
+### Performance Optimization
+
+- Use `maxAttempts` to prevent abuse
+- Configure `refreshInterval` for automatic refresh
+- Enable `autoFocus` for better user experience
+
+### Accessibility
+
+- Always enable audio support: `enableAudio={true}`
+- Provide clear instructions with `i18n` labels
+- Use `autoFocus` for keyboard users
+
+## Contributing
 
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/ShejanMahamud/recaptz.git`
 3. Install dependencies: `npm install`
 4. Start development: `npm run dev`
-5. Make your changes and test thoroughly
+5. Make changes and test thoroughly
 6. Submit a pull request
 
-## 📄 License
+## License
 
 MIT © [Shejan Mahamud](https://github.com/ShejanMahamud)
