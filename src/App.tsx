@@ -14,7 +14,7 @@ import { Captcha } from "./components/Captcha";
 // Interactive Playground Component
 function CaptchaPlayground() {
   const [config, setConfig] = useState({
-    type: "mixed" as "numbers" | "letters" | "mixed",
+    type: "mixed" as "numbers" | "letters" | "mixed" | "slider",
     length: 6,
     darkMode: false,
     caseSensitive: false,
@@ -44,6 +44,13 @@ function CaptchaPlayground() {
     confettiDuration: 3000,
     // Event tracking
     showEventLog: false,
+    // Slider captcha options
+    sliderWidth: 350,
+    sliderHeight: 200,
+    sliderPieceSize: 42,
+    sliderTolerance: 5,
+    sliderComplexity: 3,
+    sliderEnableShadow: true,
   });
 
   const [appliedConfig, setAppliedConfig] = useState(config);
@@ -92,6 +99,13 @@ function CaptchaPlayground() {
       autoFocus: true,
       showSuccessAnimation: true,
       description: "Accessibility-focused with audio support",
+    },
+    slider: {
+      type: "slider" as const,
+      showSuccessAnimation: true,
+      showConfetti: true,
+      sliderComplexity: 3,
+      description: "Interactive slider puzzle captcha",
     },
   };
 
@@ -241,6 +255,7 @@ function CaptchaPlayground() {
                   <option value="numbers">Numbers</option>
                   <option value="letters">Letters</option>
                   <option value="mixed">Mixed</option>
+                  <option value="slider">Slider Puzzle</option>
                 </select>
               </div>
 
@@ -323,6 +338,116 @@ function CaptchaPlayground() {
                 </select>
               </div>
             </div>
+
+            {/* Slider-specific options */}
+            {config.type === "slider" && (
+              <div className="mt-6 space-y-4">
+                <h5 className="font-medium text-gray-900">
+                  Slider Puzzle Settings
+                </h5>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Width: {config.sliderWidth}px
+                    </label>
+                    <input
+                      type="range"
+                      min="300"
+                      max="500"
+                      step="10"
+                      value={config.sliderWidth}
+                      onChange={(e) =>
+                        updateConfig("sliderWidth", parseInt(e.target.value))
+                      }
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Height: {config.sliderHeight}px
+                    </label>
+                    <input
+                      type="range"
+                      min="150"
+                      max="300"
+                      step="10"
+                      value={config.sliderHeight}
+                      onChange={(e) =>
+                        updateConfig("sliderHeight", parseInt(e.target.value))
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Piece Size: {config.sliderPieceSize}px
+                  </label>
+                  <input
+                    type="range"
+                    min="30"
+                    max="60"
+                    step="2"
+                    value={config.sliderPieceSize}
+                    onChange={(e) =>
+                      updateConfig("sliderPieceSize", parseInt(e.target.value))
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tolerance: {config.sliderTolerance}px
+                  </label>
+                  <input
+                    type="range"
+                    min="2"
+                    max="15"
+                    step="1"
+                    value={config.sliderTolerance}
+                    onChange={(e) =>
+                      updateConfig("sliderTolerance", parseInt(e.target.value))
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Complexity: {config.sliderComplexity}
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={config.sliderComplexity}
+                    onChange={(e) =>
+                      updateConfig("sliderComplexity", parseInt(e.target.value))
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={config.sliderEnableShadow}
+                    onChange={(e) =>
+                      updateConfig("sliderEnableShadow", e.target.checked)
+                    }
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Enable Shadow Effects
+                  </span>
+                </label>
+              </div>
+            )}
 
             {/* Boolean Options */}
             <div className="mt-6 space-y-3">
@@ -639,6 +764,14 @@ function CaptchaPlayground() {
                   i18n={
                     languages[appliedConfig.language as keyof typeof languages]
                   }
+                  sliderConfig={{
+                    width: appliedConfig.sliderWidth,
+                    height: appliedConfig.sliderHeight,
+                    pieceSize: appliedConfig.sliderPieceSize,
+                    tolerance: appliedConfig.sliderTolerance,
+                    complexity: appliedConfig.sliderComplexity,
+                    enableShadow: appliedConfig.sliderEnableShadow,
+                  }}
                   onChange={(value) =>
                     addToEventLog(`Input changed: "${value}"`)
                   }

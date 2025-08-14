@@ -1,6 +1,25 @@
-export type CaptchaType = "numbers" | "letters" | "mixed" | "custom";
+export type CaptchaType = "numbers" | "letters" | "mixed" | "custom" | "slider";
 
 export type CaptchaTheme = "light" | "dark" | "auto";
+
+export interface SliderCaptchaConfig {
+  /** Width of the slider captcha canvas */
+  width?: number;
+  /** Height of the slider captcha canvas */
+  height?: number;
+  /** Size of the puzzle piece */
+  pieceSize?: number;
+  /** Tolerance for slider position validation (in pixels) */
+  tolerance?: number;
+  /** Background image URL or base64 data URL */
+  backgroundImage?: string;
+  /** Array of predefined background images */
+  backgroundImages?: string[];
+  /** Enable puzzle piece shadow for better visibility */
+  enableShadow?: boolean;
+  /** Custom puzzle piece shape complexity (1-5) */
+  complexity?: number;
+}
 
 export interface ValidationRules {
   minLength?: number;
@@ -141,6 +160,8 @@ export interface CaptchaProps {
   showConfetti?: boolean;
   /** Custom confetti options */
   confettiOptions?: ConfettiOptions;
+  /** Slider captcha configuration */
+  sliderConfig?: SliderCaptchaConfig;
 }
 
 // Internal context type (simplified for internal use)

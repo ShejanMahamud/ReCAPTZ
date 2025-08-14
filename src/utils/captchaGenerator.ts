@@ -1,10 +1,15 @@
-import { ValidationRules } from "../types";
+import { CaptchaType, ValidationRules } from "../types";
 
 export const generateCaptcha = (
-  type: "numbers" | "letters" | "mixed",
+  type: CaptchaType,
   length: number,
   customCharacters?: string
 ): string => {
+  // For slider captcha, return a placeholder as the validation is handled differently
+  if (type === "slider") {
+    return "SLIDER_CAPTCHA";
+  }
+
   const numbers = "0123456789";
   const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
 
@@ -39,6 +44,15 @@ export const validateCaptcha = (
   rules?: ValidationRules,
   i18n: any = {}
 ): { isValid: boolean; error: string | null } => {
+  // Handle slider captcha validation
+  if (captcha === "SLIDER_CAPTCHA") {
+    // For slider captcha, if we reach here with "validated" input, it means the slider was successful
+    return {
+      isValid: input === "validated",
+      error: input === "validated" ? null : "Please complete the slider puzzle",
+    };
+  }
+
   // Early return if input is empty but required
   if (!input && rules?.required) {
     return {

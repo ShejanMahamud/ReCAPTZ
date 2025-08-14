@@ -5,6 +5,7 @@ export { CaptchaCanvas } from "./components/CaptchaCanvas";
 export { CaptchaInput } from "./components/CaptchaInput";
 export { CaptchaSuccess } from "./components/CaptchaSuccess";
 export { CaptchaTimer } from "./components/CaptchaTimer";
+export { SliderCaptcha } from "./components/SliderCaptcha";
 
 // Context
 export { CaptchaProvider, useCaptcha } from "./context/CaptchaContext";
@@ -36,6 +37,7 @@ export type {
   CaptchaType,
   CaptchaValidator,
   ConfettiOptions,
+  SliderCaptchaConfig,
   ValidationRules,
 } from "./types";
 

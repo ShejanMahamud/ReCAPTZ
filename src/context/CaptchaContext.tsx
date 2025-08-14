@@ -63,7 +63,6 @@ export const CaptchaProvider: React.FC<{
       const errorMessage = err instanceof Error ? err.message : fallbackMessage;
       setError(errorMessage);
       setErrorSeverity("medium");
-      console.error("Unexpected error:", err);
       return new Error(errorMessage);
     }
   }, []);
@@ -74,6 +73,18 @@ export const CaptchaProvider: React.FC<{
     setErrorSeverity("medium");
 
     try {
+      // Force client mode for slider captchas
+      if (type === "slider") {
+        setCurrentMode("client");
+        const clientCaptcha = generateCaptcha(type, length, customCharacters);
+        setCaptchaText(clientCaptcha);
+        setSessionToken(null);
+        setStartTime(Date.now());
+        setRetryCount(0);
+        setIsLoading(false);
+        return;
+      }
+
       const mode = await modeManager.getCurrentMode();
       setCurrentMode(mode);
 
@@ -116,10 +127,6 @@ export const CaptchaProvider: React.FC<{
         captchaError instanceof CaptchaError &&
         captchaError.severity === "high"
       ) {
-        console.error(
-          "High severity error, manual intervention required:",
-          captchaError
-        );
         return;
       }
 
@@ -204,7 +211,7 @@ export const CaptchaProvider: React.FC<{
       return false;
     }
 
-    if (!userInput.trim()) {
+    if (!userInput.trim() && type !== "slider") {
       setError("Please enter the CAPTCHA code.");
       setErrorSeverity("low");
       return false;
@@ -261,7 +268,35 @@ export const CaptchaProvider: React.FC<{
         }
       }
 
-      // Client mode validation
+      // Special handling for slider captcha
+      if (type === "slider") {
+        // For slider captcha, userInput should be "validated" when successful
+        const isSliderValid = userInput === "validated";
+        setIsValid(isSliderValid);
+        result = isSliderValid;
+
+        if (!isSliderValid) {
+          setAttempts((prev) => prev + 1);
+          setError("Please complete the slider puzzle.");
+          setErrorSeverity("low");
+
+          if (attempts + 1 >= (maxAttempts || 3)) {
+            setTimeout(async () => {
+              await refresh();
+            }, 1500);
+          }
+
+          onValidate?.(false);
+          onFail?.();
+        } else {
+          setError(null);
+          onValidate?.(true);
+        }
+
+        return result;
+      }
+
+      // Regular text captcha validation
       const rules = {
         ...validationRules,
         caseSensitive,
@@ -337,6 +372,7 @@ export const CaptchaProvider: React.FC<{
     length,
     captchaText,
     i18n,
+    type,
   ]);
 
   const playAudio = useCallback(async () => {

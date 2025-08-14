@@ -70,21 +70,6 @@ export const useCaptchaGenerator = (
         setCaptchaText(result.challengeText);
         setSessionToken(result.sessionToken);
       }
-    } catch (error) {
-      console.error("Failed to refresh CAPTCHA:", error);
-      // Fallback to client mode
-      try {
-        const effectiveType = type === "custom" ? "mixed" : type;
-        const fallbackCaptcha = generateCaptcha(
-          effectiveType,
-          length,
-          config.customCharacters
-        );
-        setCaptchaText(fallbackCaptcha);
-        setSessionToken(null);
-      } catch (fallbackError) {
-        console.error("Failed to generate fallback CAPTCHA:", fallbackError);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -113,9 +98,6 @@ export const useCaptchaGenerator = (
           setSessionToken(result.sessionToken);
           return result.challengeText;
         }
-      } catch (error) {
-        console.error("Failed to generate new CAPTCHA:", error);
-        throw error;
       } finally {
         setIsLoading(false);
       }
@@ -361,9 +343,6 @@ export const useCaptchaAudio = (): CaptchaAudio => {
         }
 
         // Fallback to basic speak
-        speak(sessionToken);
-      } catch (error) {
-        console.error("Server audio playback failed:", error);
         speak(sessionToken);
       } finally {
         setIsLoading(false);
