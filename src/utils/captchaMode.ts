@@ -134,9 +134,6 @@ class CaptchaModeManager {
           this.isServerAvailable = true;
         } catch {
           this.isServerAvailable = false;
-          console.warn(
-            "ReCAPTZ: Server became unavailable, falling back to client mode"
-          );
         }
       }
     }

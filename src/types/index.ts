@@ -19,29 +19,6 @@ export interface SliderCaptchaConfig {
   enableShadow?: boolean;
   /** Custom puzzle piece shape complexity (1-5) */
   complexity?: number;
-  /** Puzzle piece shape variant */
-  shapeVariant?:
-    | "traditional"
-    | "geometric"
-    | "organic"
-    | "minimal"
-    | "complex";
-  /** Difficulty level */
-  difficulty?: "easy" | "medium" | "hard" | "expert";
-  /** Interaction mode */
-  interactionMode?: "drag" | "click" | "swipe" | "keyboard";
-  /** Enable multiple pieces */
-  multiPiece?: boolean;
-  /** Number of pieces for multi-piece mode */
-  pieceCount?: number;
-  /** Enable rotation for pieces */
-  enableRotation?: boolean;
-  /** Enable scaling for pieces */
-  enableScaling?: boolean;
-  /** Animation speed */
-  animationSpeed?: "slow" | "normal" | "fast";
-  /** Visual theme */
-  theme?: "default" | "neon" | "pastel" | "monochrome" | "gradient";
 }
 
 export interface ValidationRules {

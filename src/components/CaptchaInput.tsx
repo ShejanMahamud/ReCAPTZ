@@ -64,7 +64,7 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
     try {
       await playAudio();
     } catch (error) {
-      console.error("Audio playback failed:", error);
+      // Silently handle audio playback failure
     } finally {
       setIsSpeaking(false);
     }

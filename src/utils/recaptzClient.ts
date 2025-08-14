@@ -251,13 +251,6 @@ export class ReCAPTZClient {
 
         clearTimeout(timeout);
 
-        if (this.debug && import.meta.env.DEV) {
-          console.log(`ReCAPTZ: ${config.method || "GET"} request`, {
-            attempt,
-            status: response.status,
-          });
-        }
-
         if (!response.ok) {
           await this.handleApiError(response);
         }
@@ -299,15 +292,6 @@ export class ReCAPTZClient {
         const delay = baseDelay + jitter;
 
         await new Promise((resolve) => setTimeout(resolve, delay));
-
-        if (this.debug) {
-          console.warn(
-            `ReCAPTZ: Attempt ${attempt} failed, retrying in ${delay.toFixed(
-              0
-            )}ms`,
-            error
-          );
-        }
       }
     }
 

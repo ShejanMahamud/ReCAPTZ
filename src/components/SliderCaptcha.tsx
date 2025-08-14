@@ -1,19 +1,27 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, Loader2 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { SliderCaptchaConfig } from "../types";
+import { ConfettiOptions, SliderCaptchaConfig } from "../types";
+
+// Dynamic import for confetti to avoid SSR issues
+const triggerConfetti = async (options: ConfettiOptions) => {
+  try {
+    const confetti = (await import("canvas-confetti")).default;
+    confetti(options);
+  } catch {
+    // Silently fail if confetti fails to load
+  }
+};
 
 // Pexels API configuration
 const PEXELS_API_KEY =
-  "w8hqhT3wZxwABO6SyD0Vjhvq8BjfkST7k52athhdqsDcefxdPapFyS5m"; // Free API key
+  "w8hqhT3wZxwABO6SyD0Vjhvq8BjfkST7k52athhdqsDcefxdPapFyS5m";
 const PEXELS_API_URL = "https://api.pexels.com/v1/search";
 
 interface PexelsPhoto {
   id: number;
   src: {
     medium: string;
-    small: string;
-    large: string;
   };
 }
 
@@ -29,6 +37,9 @@ interface SliderCaptchaProps {
   onValidate?: (isValid: boolean, position: number) => void;
   onPositionChange?: (position: number) => void;
   disabled?: boolean;
+  showSuccessAnimation?: boolean;
+  showConfetti?: boolean;
+  confettiOptions?: ConfettiOptions;
 }
 
 interface PuzzleState {
@@ -48,6 +59,9 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   onValidate,
   onPositionChange,
   disabled = false,
+  showSuccessAnimation = false,
+  showConfetti = false,
+  confettiOptions = {},
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sliderCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,53 +79,11 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
 
   const {
     pieceSize = 42,
-    tolerance: baseTolerance = 12,
+    tolerance = 12,
     backgroundImage,
     backgroundImages,
     enableShadow = true,
-    shapeVariant = "traditional",
-    difficulty = "medium",
-    // TODO: Implement different interaction modes (click, swipe, keyboard)
-    interactionMode = "drag",
-    // TODO: Implement multi-piece puzzle mode
-    multiPiece = false,
-    pieceCount = 1,
-    // TODO: Implement piece rotation functionality
-    enableRotation = false,
-    // TODO: Implement piece scaling functionality
-    enableScaling = false,
-    animationSpeed = "normal",
-    theme = "default",
   } = config;
-
-  // Adjust tolerance based on difficulty
-  const tolerance = (() => {
-    switch (difficulty) {
-      case "easy":
-        return baseTolerance * 1.5;
-      case "medium":
-        return baseTolerance;
-      case "hard":
-        return baseTolerance * 0.7;
-      case "expert":
-        return baseTolerance * 0.4;
-      default:
-        return baseTolerance;
-    }
-  })();
-
-  // Get animation duration based on speed
-  const getAnimationDuration = () => {
-    switch (animationSpeed) {
-      case "slow":
-        return 800;
-      case "fast":
-        return 200;
-      case "normal":
-      default:
-        return 500;
-    }
-  };
 
   const [puzzleState, setPuzzleState] = useState<PuzzleState>({
     targetX: 0,
@@ -126,11 +98,11 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [showFailedAttempt, setShowFailedAttempt] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Cache for loaded images to prevent duplicate loading
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const currentImageUrl = useRef<string>("");
-  const attemptsRef = useRef<number>(0);
 
   // ResizeObserver to measure container width
   useEffect(() => {
@@ -282,8 +254,8 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       }
 
       throw new Error("No images found");
-    } catch (error) {
-      console.warn("Failed to fetch Pexels image:", error);
+    } catch {
+      // Silently fail and return empty string
       return "";
     } finally {
       setIsLoadingImage(false);
@@ -291,7 +263,7 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   }, []);
 
   // Create traditional puzzle piece shape
-  const createTraditionalPuzzlePath = useCallback(
+  const createPuzzlePath = useCallback(
     (x: number, y: number): Path2D => {
       const path = new Path2D();
       const size = pieceSize;
@@ -408,228 +380,6 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     [pieceSize]
   );
 
-  // Create geometric puzzle piece shape
-  const createGeometricPuzzlePath = useCallback(
-    (x: number, y: number): Path2D => {
-      const path = new Path2D();
-      const size = pieceSize;
-
-      // Geometric shapes: triangle, square, hexagon, octagon
-      const shapes = ["triangle", "square", "hexagon", "octagon"];
-      const selectedShape = shapes[Math.floor(Math.random() * shapes.length)];
-
-      switch (selectedShape) {
-        case "triangle": {
-          path.moveTo(x + size / 2, y);
-          path.lineTo(x + size, y + size);
-          path.lineTo(x, y + size);
-          break;
-        }
-
-        case "square": {
-          path.rect(x, y, size, size);
-          break;
-        }
-
-        case "hexagon": {
-          const centerX = x + size / 2;
-          const centerY = y + size / 2;
-          const radius = size / 2;
-          for (let i = 0; i < 6; i++) {
-            const angle = (i * Math.PI) / 3;
-            const px = centerX + radius * Math.cos(angle);
-            const py = centerY + radius * Math.sin(angle);
-            if (i === 0) path.moveTo(px, py);
-            else path.lineTo(px, py);
-          }
-          break;
-        }
-
-        case "octagon": {
-          const octCenterX = x + size / 2;
-          const octCenterY = y + size / 2;
-          const octRadius = size / 2;
-          for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4;
-            const px = octCenterX + octRadius * Math.cos(angle);
-            const py = octCenterY + octRadius * Math.sin(angle);
-            if (i === 0) path.moveTo(px, py);
-            else path.lineTo(px, py);
-          }
-          break;
-        }
-      }
-
-      path.closePath();
-      return path;
-    },
-    [pieceSize]
-  );
-
-  // Create organic puzzle piece shape
-  const createOrganicPuzzlePath = useCallback(
-    (x: number, y: number): Path2D => {
-      const path = new Path2D();
-      const size = pieceSize;
-
-      // Organic blob-like shape
-      const centerX = x + size / 2;
-      const centerY = y + size / 2;
-      const radius = size / 2;
-
-      path.moveTo(centerX + radius, centerY);
-
-      // Create organic curve with multiple control points
-      for (let i = 0; i < 8; i++) {
-        const angle = (i * Math.PI) / 4;
-        const baseRadius = radius * (0.7 + Math.random() * 0.6);
-        const px = centerX + baseRadius * Math.cos(angle);
-        const py = centerY + baseRadius * Math.sin(angle);
-
-        if (i === 0) {
-          path.moveTo(px, py);
-        } else {
-          // Add some randomness for organic feel
-          const cp1x = centerX + radius * 0.8 * Math.cos(angle - 0.2);
-          const cp1y = centerY + radius * 0.8 * Math.sin(angle - 0.2);
-          const cp2x = centerX + radius * 0.8 * Math.cos(angle + 0.2);
-          const cp2y = centerY + radius * 0.8 * Math.sin(angle + 0.2);
-
-          path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, px, py);
-        }
-      }
-
-      path.closePath();
-      return path;
-    },
-    [pieceSize]
-  );
-
-  // Create minimal puzzle piece shape
-  const createMinimalPuzzlePath = useCallback(
-    (x: number, y: number): Path2D => {
-      const path = new Path2D();
-      const size = pieceSize;
-
-      // Simple rounded rectangle
-      const cornerRadius = size * 0.1;
-
-      path.moveTo(x + cornerRadius, y);
-      path.lineTo(x + size - cornerRadius, y);
-      path.arc(
-        x + size - cornerRadius,
-        y + cornerRadius,
-        cornerRadius,
-        -Math.PI / 2,
-        0,
-        false
-      );
-      path.lineTo(x + size, y + size - cornerRadius);
-      path.arc(
-        x + size - cornerRadius,
-        y + size - cornerRadius,
-        cornerRadius,
-        0,
-        Math.PI / 2,
-        false
-      );
-      path.lineTo(x + cornerRadius, y + size);
-      path.arc(
-        x + cornerRadius,
-        y + size - cornerRadius,
-        cornerRadius,
-        Math.PI / 2,
-        Math.PI,
-        false
-      );
-      path.lineTo(x, y + cornerRadius);
-      path.arc(
-        x + cornerRadius,
-        y + cornerRadius,
-        cornerRadius,
-        Math.PI,
-        -Math.PI / 2,
-        false
-      );
-
-      path.closePath();
-      return path;
-    },
-    [pieceSize]
-  );
-
-  // Create complex puzzle piece shape
-  const createComplexPuzzlePath = useCallback(
-    (x: number, y: number): Path2D => {
-      const path = new Path2D();
-      const size = pieceSize;
-
-      // Complex shape with multiple curves and details
-      const centerX = x + size / 2;
-      const centerY = y + size / 2;
-
-      // Start with a star-like shape
-      const points = 5;
-      const outerRadius = size / 2;
-      const innerRadius = size / 4;
-
-      for (let i = 0; i < points * 2; i++) {
-        const angle = (i * Math.PI) / points;
-        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-        const px = centerX + radius * Math.cos(angle);
-        const py = centerY + radius * Math.sin(angle);
-
-        if (i === 0) {
-          path.moveTo(px, py);
-        } else {
-          // Add curved connections
-          const prevAngle = ((i - 1) * Math.PI) / points;
-          const prevRadius = (i - 1) % 2 === 0 ? outerRadius : innerRadius;
-          const prevX = centerX + prevRadius * Math.cos(prevAngle);
-          const prevY = centerY + prevRadius * Math.sin(prevAngle);
-
-          const cp1x = prevX + (px - prevX) * 0.3;
-          const cp1y = prevY + (py - prevY) * 0.3;
-          const cp2x = px - (px - prevX) * 0.3;
-          const cp2y = py - (py - prevY) * 0.3;
-
-          path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, px, py);
-        }
-      }
-
-      path.closePath();
-      return path;
-    },
-    [pieceSize]
-  );
-
-  // Main puzzle path creation function that selects variant
-  const createPuzzlePath = useCallback(
-    (x: number, y: number): Path2D => {
-      switch (shapeVariant) {
-        case "geometric":
-          return createGeometricPuzzlePath(x, y);
-        case "organic":
-          return createOrganicPuzzlePath(x, y);
-        case "minimal":
-          return createMinimalPuzzlePath(x, y);
-        case "complex":
-          return createComplexPuzzlePath(x, y);
-        case "traditional":
-        default:
-          return createTraditionalPuzzlePath(x, y);
-      }
-    },
-    [
-      shapeVariant,
-      createTraditionalPuzzlePath,
-      createGeometricPuzzlePath,
-      createOrganicPuzzlePath,
-      createMinimalPuzzlePath,
-      createComplexPuzzlePath,
-    ]
-  );
-
   // Initialize puzzle
   const initializePuzzle = useCallback(async () => {
     const targetX = Math.random() * (width - pieceSize - 80) + 60;
@@ -651,7 +401,6 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     // Clear image cache and current URL when initializing new puzzle
     imageCache.current.clear();
     currentImageUrl.current = "";
-    attemptsRef.current = 0;
 
     setPuzzleState({
       targetX,
@@ -662,10 +411,11 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       puzzlePath,
     });
 
-    // Reset all UI states
+    // Reset UI states but keep success animation if it's currently showing
     setIsValidated(false);
     setShowFailedAttempt(false);
     setDragOffset(0);
+    // Don't reset showSuccess here - let it be managed by the validation function
   }, [
     width,
     height,
@@ -951,21 +701,39 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   const validatePosition = useCallback(
     (position: number) => {
       const isValid = Math.abs(position - puzzleState.targetX) <= tolerance;
-      console.log(
-        `Validation: position=${position}, target=${puzzleState.targetX}, isValid=${isValid}, attempts=${attemptsRef.current}`
-      );
-
       setIsValidated(isValid);
 
       if (isValid) {
         // Success - keep piece in position and call parent validation
-        console.log("Slider CAPTCHA: SUCCESS");
         onValidate?.(true, position);
-      } else {
-        // Failed attempt - increment attempts and show failed state
-        attemptsRef.current += 1;
-        console.log(`Slider CAPTCHA failed attempt ${attemptsRef.current}`);
 
+        // Show success animation if enabled
+        if (showSuccessAnimation) {
+          setShowSuccess(true);
+
+          // Hide success animation after 5 seconds (increased from 3)
+          setTimeout(() => {
+            setShowSuccess(false);
+          }, 5000);
+        }
+
+        // Trigger confetti if enabled
+        if (showConfetti) {
+          const defaultOptions = {
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
+            gravity: 1,
+            scalar: 1,
+            duration: 3000,
+          };
+
+          const finalOptions = { ...defaultOptions, ...confettiOptions };
+          triggerConfetti(finalOptions);
+        }
+      } else {
+        // Failed attempt - show failed state
         setShowFailedAttempt(true);
 
         // Reset failed state after animation
@@ -975,7 +743,7 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
             ...prev,
             sliderPosition: 0,
           }));
-        }, getAnimationDuration());
+        }, 800);
 
         // Call parent validation with failure
         onValidate?.(false, position);
@@ -983,7 +751,14 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
 
       return isValid;
     },
-    [puzzleState.targetX, tolerance, onValidate, getAnimationDuration]
+    [
+      puzzleState.targetX,
+      tolerance,
+      onValidate,
+      showSuccessAnimation,
+      showConfetti,
+      confettiOptions,
+    ]
   );
 
   // Handle pointer events with improved UX
@@ -1120,7 +895,7 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     setIsValidated(false);
     setShowFailedAttempt(false);
     setDragOffset(0);
-    attemptsRef.current = 0;
+    setShowSuccess(false);
 
     // Initialize the puzzle
     initializePuzzle();
@@ -1145,49 +920,6 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   const progressPercentage =
     (puzzleState.sliderPosition / (width - pieceSize)) * 100;
 
-  // Get theme-based styling
-  const getThemeStyles = () => {
-    switch (theme) {
-      case "neon":
-        return {
-          borderColor: "border-cyan-400",
-          shadowColor: "shadow-cyan-400/50",
-          bgColor: "bg-cyan-500",
-          textColor: "text-cyan-100",
-        };
-      case "pastel":
-        return {
-          borderColor: "border-pink-300",
-          shadowColor: "shadow-pink-200/50",
-          bgColor: "bg-pink-200",
-          textColor: "text-pink-700",
-        };
-      case "monochrome":
-        return {
-          borderColor: "border-gray-600",
-          shadowColor: "shadow-gray-500/50",
-          bgColor: "bg-gray-600",
-          textColor: "text-gray-100",
-        };
-      case "gradient":
-        return {
-          borderColor: "border-gradient-to-r from-blue-500 to-purple-500",
-          shadowColor: "shadow-blue-400/50",
-          bgColor: "bg-gradient-to-r from-blue-500 to-purple-500",
-          textColor: "text-white",
-        };
-      default:
-        return {
-          borderColor: "border-gray-300",
-          shadowColor: "shadow-gray-200/50",
-          bgColor: "bg-blue-500",
-          textColor: "text-white",
-        };
-    }
-  };
-
-  const themeStyles = getThemeStyles();
-
   return (
     <div className="slider-captcha-container w-full">
       {/* Main puzzle area */}
@@ -1199,15 +931,10 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
             : showFailedAttempt
             ? "border-red-400 shadow-red-200/50 shadow-lg"
             : puzzleState.isDragging
-            ? `${themeStyles.borderColor} ${themeStyles.shadowColor} shadow-lg`
+            ? "border-blue-400 shadow-blue-200/50 shadow-lg"
             : darkMode
             ? "border-gray-600 hover:border-gray-500"
-            : `${
-                themeStyles.borderColor
-              } hover:${themeStyles.borderColor.replace(
-                "border-",
-                "border-opacity-80 "
-              )}`
+            : "border-gray-300 hover:border-gray-400"
         } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
         style={{ height }}
         onPointerDown={handlePointerDown}
@@ -1350,6 +1077,43 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Success Animation */}
+      <AnimatePresence>
+        {showSuccess && showSuccessAnimation && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className={`mt-4 flex items-center justify-center p-4 rounded-lg border-2 ${
+              darkMode
+                ? "bg-green-500/10 border-green-400/30"
+                : "bg-green-50 border-green-200"
+            }`}
+          >
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.5 }}
+            >
+              <CheckCircle2
+                className={`w-5 h-5 ${
+                  darkMode ? "text-green-400" : "text-green-500"
+                }`}
+              />
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`ml-3 font-semibold text-sm ${
+                darkMode ? "text-green-400" : "text-green-600"
+              }`}
+            >
+              Verification Successful!
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

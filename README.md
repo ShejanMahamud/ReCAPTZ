@@ -70,6 +70,55 @@ function LoginForm() {
   length={5}
   caseSensitive={true}
 />
+
+// Slider Puzzle CAPTCHA
+<Captcha
+  type="slider"
+  sliderConfig={{
+    width: 320,
+    height: 180,
+    pieceSize: 42,
+    tolerance: 12,
+    enableShadow: true,
+  }}
+  showSuccessAnimation={true}
+  showConfetti={true}
+  onValidate={(isValid) => console.log("Slider validated:", isValid)}
+/>
+```
+
+### Slider Puzzle CAPTCHA
+
+The SliderCaptcha provides an interactive puzzle-solving experience where users drag a puzzle piece to complete an image. It's perfect for modern web applications that need a more engaging CAPTCHA experience.
+
+#### Basic Usage
+
+```tsx
+<Captcha
+  type="slider"
+  onValidate={setVerified}
+  showSuccessAnimation={true}
+  showConfetti={true}
+/>
+```
+
+#### Custom Background Images (Optional)
+
+You can override the automatic Pexels images by providing your own:
+
+```tsx
+<Captcha
+  type="slider"
+  sliderConfig={{
+    backgroundImage: "https://your-domain.com/custom-image.jpg",
+    // OR use multiple images for variety
+    backgroundImages: [
+      "https://your-domain.com/image1.jpg",
+      "https://your-domain.com/image2.jpg",
+      "https://your-domain.com/image3.jpg",
+    ],
+  }}
+/>
 ```
 
 ### Advanced Configuration
@@ -88,46 +137,6 @@ function LoginForm() {
   type="numbers"
   enableAudio={true}
   autoFocus={true}
-/>
-```
-
-## Usage Examples
-
-### Contact Form Protection
-
-```tsx
-<Captcha
-  type="letters"
-  length={5}
-  refreshable
-  enableAudio
-  validationRules={{
-    required: true,
-    customValidator: (value) =>
-      /^[a-zA-Z]+$/.test(value) || "Only letters are allowed",
-  }}
-/>
-```
-
-### E-commerce Checkout
-
-```tsx
-<Captcha
-  customCharacters="ABCDEF123456"
-  length={5}
-  caseSensitive={true}
-  validationRules={{
-    required: true,
-    allowedCharacters: "ABCDEF123456",
-    customValidator: (value) => {
-      const hasLetter = /[A-F]/.test(value);
-      const hasNumber = /[1-6]/.test(value);
-      return (
-        (hasLetter && hasNumber) ||
-        "Must contain at least one letter and one number"
-      );
-    },
-  }}
 />
 ```
 
@@ -461,6 +470,34 @@ ReCAPTZ includes comprehensive accessibility features:
 | `successComponent`     | `React.ReactNode`                   | -         | Custom success component           |
 | `errorComponent`       | `React.ReactNode`                   | -         | Custom error component             |
 | `theme`                | `CaptchaTheme`                      | -         | Custom theme configuration         |
+
+#### SliderCaptcha Configuration
+
+| Property           | Type       | Default | Description                               |
+| ------------------ | ---------- | ------- | ----------------------------------------- |
+| `width`            | `number`   | `320`   | Width of the puzzle canvas in pixels      |
+| `height`           | `number`   | `180`   | Height of the puzzle canvas in pixels     |
+| `pieceSize`        | `number`   | `42`    | Size of the puzzle piece in pixels        |
+| `tolerance`        | `number`   | `12`    | Pixel tolerance for successful validation |
+| `enableShadow`     | `boolean`  | `true`  | Enable shadow effects on puzzle pieces    |
+| `backgroundImage`  | `string`   | -       | Custom background image URL               |
+| `backgroundImages` | `string[]` | -       | Array of custom background image URLs     |
+
+#### Component Props
+
+| Property               | Type                                           | Default | Description                           |
+| ---------------------- | ---------------------------------------------- | ------- | ------------------------------------- |
+| `type`                 | `"slider"`                                     | -       | Must be set to "slider"               |
+| `sliderConfig`         | `SliderCaptchaConfig`                          | `{}`    | Configuration object for the slider   |
+| `darkMode`             | `boolean`                                      | `false` | Enable dark mode theme                |
+| `onValidate`           | `(isValid: boolean, position: number) => void` | -       | Callback when validation occurs       |
+| `onPositionChange`     | `(position: number) => void`                   | -       | Callback when slider position changes |
+| `disabled`             | `boolean`                                      | `false` | Disable the slider interaction        |
+| `maxAttempts`          | `number`                                       | -       | Maximum validation attempts           |
+| `onFail`               | `() => void`                                   | -       | Callback when max attempts reached    |
+| `showSuccessAnimation` | `boolean`                                      | `false` | Show success animation on validation  |
+| `showConfetti`         | `boolean`                                      | `false` | Show confetti effect on success       |
+| `confettiOptions`      | `ConfettiOptions`                              | `{}`    | Configuration for confetti animation  |
 
 ## TypeScript Support
 

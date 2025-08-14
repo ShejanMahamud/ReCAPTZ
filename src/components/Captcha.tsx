@@ -123,6 +123,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
     error,
     playAudio,
     currentAttempts,
+    validate,
   } = useCaptcha();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -171,8 +172,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         await refresh();
         if (onRefresh) onRefresh();
       }
-    } catch (error) {
-      console.error("Refresh failed:", error);
+    } catch {
+      // Silently handle refresh failure
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
@@ -183,8 +184,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
     try {
       await playAudio();
       if (onAudioPlay) onAudioPlay();
-    } catch (error) {
-      console.error("Audio play failed:", error);
+    } catch {
+      // Silently handle audio play failure
     } finally {
       setIsPlayingAudio(false);
     }
@@ -314,6 +315,9 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
                 config={sliderConfig}
                 darkMode={darkMode}
                 disabled={isLoading || shouldDisableInteraction}
+                showSuccessAnimation={showSuccessAnimation}
+                showConfetti={showConfetti}
+                confettiOptions={confettiOptions}
                 onValidate={(isValid) => {
                   if (isValid) {
                     // For successful slider validation, just mark as validated
@@ -322,6 +326,10 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
                     // Directly call the parent onValidate to indicate success
                     // No need to call context validate() since we're bypassing it
                     if (onValidate) onValidate(true);
+                  } else {
+                    // For failed slider validation, call context validate to increment attempts
+                    // This ensures proper attempts tracking and maxAttempts handling
+                    validate();
                   }
                 }}
                 onPositionChange={(position) => {

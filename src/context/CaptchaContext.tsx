@@ -63,7 +63,6 @@ export const CaptchaProvider: React.FC<{
       const errorMessage = err instanceof Error ? err.message : fallbackMessage;
       setError(errorMessage);
       setErrorSeverity("medium");
-      console.error("Unexpected error:", err);
       return new Error(errorMessage);
     }
   }, []);
@@ -128,10 +127,6 @@ export const CaptchaProvider: React.FC<{
         captchaError instanceof CaptchaError &&
         captchaError.severity === "high"
       ) {
-        console.error(
-          "High severity error, manual intervention required:",
-          captchaError
-        );
         return;
       }
 
