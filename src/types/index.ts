@@ -1,6 +1,48 @@
-export type CaptchaType = "numbers" | "letters" | "mixed" | "custom";
+export type CaptchaType = "numbers" | "letters" | "mixed" | "custom" | "slider";
 
 export type CaptchaTheme = "light" | "dark" | "auto";
+
+export interface SliderCaptchaConfig {
+  /** Width of the slider captcha canvas */
+  width?: number;
+  /** Height of the slider captcha canvas */
+  height?: number;
+  /** Size of the puzzle piece */
+  pieceSize?: number;
+  /** Tolerance for slider position validation (in pixels) */
+  tolerance?: number;
+  /** Background image URL or base64 data URL */
+  backgroundImage?: string;
+  /** Array of predefined background images */
+  backgroundImages?: string[];
+  /** Enable puzzle piece shadow for better visibility */
+  enableShadow?: boolean;
+  /** Custom puzzle piece shape complexity (1-5) */
+  complexity?: number;
+  /** Puzzle piece shape variant */
+  shapeVariant?:
+    | "traditional"
+    | "geometric"
+    | "organic"
+    | "minimal"
+    | "complex";
+  /** Difficulty level */
+  difficulty?: "easy" | "medium" | "hard" | "expert";
+  /** Interaction mode */
+  interactionMode?: "drag" | "click" | "swipe" | "keyboard";
+  /** Enable multiple pieces */
+  multiPiece?: boolean;
+  /** Number of pieces for multi-piece mode */
+  pieceCount?: number;
+  /** Enable rotation for pieces */
+  enableRotation?: boolean;
+  /** Enable scaling for pieces */
+  enableScaling?: boolean;
+  /** Animation speed */
+  animationSpeed?: "slow" | "normal" | "fast";
+  /** Visual theme */
+  theme?: "default" | "neon" | "pastel" | "monochrome" | "gradient";
+}
 
 export interface ValidationRules {
   minLength?: number;
@@ -141,6 +183,8 @@ export interface CaptchaProps {
   showConfetti?: boolean;
   /** Custom confetti options */
   confettiOptions?: ConfettiOptions;
+  /** Slider captcha configuration */
+  sliderConfig?: SliderCaptchaConfig;
 }
 
 // Internal context type (simplified for internal use)

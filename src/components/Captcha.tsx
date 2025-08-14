@@ -16,6 +16,7 @@ import { CaptchaCanvas } from "./CaptchaCanvas";
 import { CaptchaInput } from "./CaptchaInput";
 import { CaptchaSuccess } from "./CaptchaSuccess";
 import { CaptchaTimer } from "./CaptchaTimer";
+import { SliderCaptcha } from "./SliderCaptcha";
 
 // Hook for building custom CAPTCHA UIs
 export const useCaptchaState = () => {
@@ -109,6 +110,9 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   showConfetti = false,
   confettiOptions = {},
   loadingComponent,
+  sliderConfig = {},
+  type = "mixed",
+  onValidate,
 }) => {
   const { isFocusVisible, focusProps } = useFocusRing();
   const {
@@ -126,6 +130,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   const [errorSeverity, setErrorSeverity] = useState<"low" | "medium" | "high">(
     "medium"
   );
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Extract error severity from error message (this is a simple approach)
   React.useEffect(() => {
@@ -154,9 +159,18 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   const handleRefresh = async () => {
     setUserInput("");
     setIsRefreshing(true);
+
     try {
-      await refresh();
-      if (onRefresh) onRefresh();
+      if (type === "slider") {
+        // For slider captcha, just increment refresh key to force remount
+        // Don't call context refresh() as it's not needed and may cause issues
+        setRefreshKey((prev) => prev + 1);
+        if (onRefresh) onRefresh();
+      } else {
+        // For text captcha, use context refresh
+        await refresh();
+        if (onRefresh) onRefresh();
+      }
     } catch (error) {
       console.error("Refresh failed:", error);
     } finally {
@@ -210,7 +224,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
         </div>
         <div className="flex items-center gap-1.5">
-          {enableAudio && (
+          {type !== "slider" && enableAudio && (
             <button
               onClick={handleAudioPlay}
               disabled={isPlayingAudio || shouldDisableInteraction}
@@ -292,7 +306,32 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
               isRefreshing || isLoading ? "opacity-50" : "opacity-100"
             } ${isFocusVisible ? "border-2 border-blue-500" : ""}`}
           >
-            <CaptchaCanvas darkMode={darkMode} height={60} />
+            {type === "slider" ? (
+              <SliderCaptcha
+                key={`slider-${refreshKey}`}
+                width={sliderConfig.width}
+                height={sliderConfig.height}
+                config={sliderConfig}
+                darkMode={darkMode}
+                disabled={isLoading || shouldDisableInteraction}
+                onValidate={(isValid) => {
+                  if (isValid) {
+                    // For successful slider validation, just mark as validated
+                    setUserInput("validated");
+
+                    // Directly call the parent onValidate to indicate success
+                    // No need to call context validate() since we're bypassing it
+                    if (onValidate) onValidate(true);
+                  }
+                }}
+                onPositionChange={(position) => {
+                  // Update some state to track position
+                  onChange?.(position.toString());
+                }}
+              />
+            ) : (
+              <CaptchaCanvas darkMode={darkMode} height={60} />
+            )}
           </div>
         </div>
         {refreshInterval > 0 && (
@@ -307,14 +346,16 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
             isFocusVisible ? "border-2 border-blue-500 p-3" : "p-3"
           } ${inputButtonStyle}`}
         >
-          <CaptchaInput
-            className="w-full"
-            onChange={onChange}
-            darkMode={darkMode}
-            i18n={mergedI18n}
-            disabled={isLoading}
-            disableSpaceToHear={disableSpaceToHear}
-          />
+          {type !== "slider" && (
+            <CaptchaInput
+              className="w-full"
+              onChange={onChange}
+              darkMode={darkMode}
+              i18n={mergedI18n}
+              disabled={isLoading}
+              disableSpaceToHear={disableSpaceToHear}
+            />
+          )}
         </div>
       </div>
 
@@ -332,12 +373,15 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
           darkMode ? "text-gray-400" : "text-gray-500"
         } ${isHighSeverityError ? "opacity-60" : ""}`}
       >
-        {enableAudio &&
+        {type !== "slider" &&
+          enableAudio &&
           !disableSpaceToHear &&
           !isHighSeverityError &&
           ` ${mergedI18n.pressSpaceToHearCode} •`}{" "}
-        {!isHighSeverityError && `${mergedI18n.enterToValidate} •`}
-        {!isHighSeverityError && mergedI18n.escToClear}
+        {type !== "slider" &&
+          !isHighSeverityError &&
+          `${mergedI18n.enterToValidate} •`}
+        {type !== "slider" && !isHighSeverityError && mergedI18n.escToClear}
         {isHighSeverityError &&
           "Service temporarily unavailable. Please try again later."}
       </div>
