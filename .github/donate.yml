@@ -1,0 +1,24 @@
+name: Sponsor
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  sponsor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Show sponsor message
+        run: |
+          echo "Thank you for considering sponsoring our project!"
+
+          echo "You can support us through the following methods:"
+          echo "- GitHub Sponsors: https://github.com/sponsors/ShejanMahamud"
+          echo "- Open Collective: https://buy.polar.sh/polar_cl_wqXRfQ7X6aRtStneJOyjO2Hp48FfrXqxStf6f3NFxVm"
+          echo "Your contributions help us maintain and improve ReCAPTZ."
