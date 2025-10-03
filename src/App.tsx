@@ -9,12 +9,14 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Captcha } from "./components/Captcha";
+import type { RootState } from "./store";
 
 // Interactive Playground Component
 function CaptchaPlayground() {
   const [config, setConfig] = useState({
-    type: "mixed" as "numbers" | "letters" | "mixed" | "slider",
+    type: "mixed" as "numbers" | "letters" | "mixed" | "slider" | "math" | "pattern",
     length: 6,
     darkMode: false,
     caseSensitive: false,
@@ -51,10 +53,18 @@ function CaptchaPlayground() {
     sliderTolerance: 5,
     sliderComplexity: 3,
     sliderEnableShadow: true,
+    // Math captcha options
+    mathDifficulty: "easy" as "easy" | "medium" | "hard",
+    mathOperations: ["add", "subtract"] as ("add" | "subtract" | "multiply" | "divide")[],
+    mathDisplayFormat: "horizontal" as "horizontal" | "vertical",
+    // Pattern captcha options
+    patternDifficulty: "easy" as "easy" | "medium" | "hard",
+    patternGridSize: 4,
+    patternTypes: ["shape", "color"] as ("shape" | "color" | "sequence" | "rotation")[],
   });
 
   const [appliedConfig, setAppliedConfig] = useState(config);
-  const [isValid, setIsValid] = useState(false);
+  const isValid = useSelector((state: RootState) => state.captcha.isValid);
   const [hasChanges, setHasChanges] = useState(false);
   const [eventLog, setEventLog] = useState<string[]>([]);
 
@@ -107,6 +117,19 @@ function CaptchaPlayground() {
       sliderComplexity: 3,
       description: "Interactive slider puzzle captcha",
     },
+    math: {
+      type: "math" as const,
+      showSuccessAnimation: true,
+      mathDifficulty: "easy" as const,
+      mathOperations: ["add", "subtract"] as ("add" | "subtract" | "multiply" | "divide")[],
+      description: "Math problem captcha for better UX",
+    },
+    pattern: {
+      type: "pattern" as const,
+      showSuccessAnimation: true,
+      patternDifficulty: "easy" as const,
+      patternGridSize: 4,
+    }
   };
 
   const languages = {
@@ -129,10 +152,10 @@ function CaptchaPlayground() {
     },
   };
 
-  const updateConfig = (key: string, value: string | number | boolean) => {
+  const updateConfig = (key: string, value: string | number | boolean | any[]) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
     setHasChanges(true);
-    setIsValid(false);
+    // Remove setIsValid(false) - Redux manages validation state
   };
 
   const applyPreset = (presetKey: keyof typeof presets) => {
@@ -141,7 +164,7 @@ function CaptchaPlayground() {
     setConfig(newConfig);
     setAppliedConfig(newConfig);
     setHasChanges(false);
-    setIsValid(false);
+    // Remove setIsValid(false) - Redux manages validation state
   };
 
   const applyChanges = () => {
@@ -256,6 +279,8 @@ function CaptchaPlayground() {
                   <option value="letters">Letters</option>
                   <option value="mixed">Mixed</option>
                   <option value="slider">Slider Puzzle</option>
+                  <option value="math">Math Problem</option>
+                  <option value="pattern">Pattern Recognition</option>
                 </select>
               </div>
 
@@ -446,6 +471,133 @@ function CaptchaPlayground() {
                     Enable Shadow Effects
                   </span>
                 </label>
+              </div>
+            )}
+
+            {config.type === "math" && (
+              <div className="mt-6 space-y-4">
+                <h5 className="font-medium text-gray-900">
+                  Math Captcha Settings
+                </h5>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Difficulty
+                  </label>
+                  <select
+                    value={config.mathDifficulty}
+                    onChange={(e) => updateConfig("mathDifficulty", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="easy">Easy (1-10)</option>
+                    <option value="medium">Medium (10-50)</option>
+                    <option value="hard">Hard (50-100)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Operations
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["add", "subtract", "multiply", "divide"].map((op) => (
+                      <label key={op} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={config.mathOperations.includes(op as any)}
+                          onChange={(e) => {
+                            const operations = e.target.checked
+                              ? [...config.mathOperations, op as any]
+                              : config.mathOperations.filter((o) => o !== op);
+                            updateConfig("mathOperations", operations);
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 capitalize">
+                          {op}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Display Format
+                  </label>
+                  <select
+                    value={config.mathDisplayFormat}
+                    onChange={(e) => updateConfig("mathDisplayFormat", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="horizontal">Horizontal (a + b = ?)</option>
+                    <option value="vertical">Vertical (stack format)</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {config.type === "pattern" && (
+              <div className="mt-6 space-y-4">
+                <h5 className="font-medium text-gray-900">
+                  Pattern Captcha Settings
+                </h5>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Difficulty
+                  </label>
+                  <select
+                    value={config.patternDifficulty}
+                    onChange={(e) => updateConfig("patternDifficulty", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="easy">Easy (4 items)</option>
+                    <option value="medium">Medium (6 items)</option>
+                    <option value="hard">Hard (9 items)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Grid Size: {config.patternGridSize} items
+                  </label>
+                  <input
+                    type="range"
+                    min="4"
+                    max="9"
+                    step="1"
+                    value={config.patternGridSize}
+                    onChange={(e) => updateConfig("patternGridSize", parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pattern Types
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {["shape", "color", "sequence", "rotation"].map((type) => (
+                      <label key={type} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={config.patternTypes.includes(type as any)}
+                          onChange={(e) => {
+                            const types = e.target.checked
+                              ? [...config.patternTypes, type as any]
+                              : config.patternTypes.filter((t) => t !== type);
+                            updateConfig("patternTypes", types);
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 capitalize">
+                          {type}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -659,11 +811,10 @@ function CaptchaPlayground() {
               <button
                 onClick={applyChanges}
                 disabled={!hasChanges}
-                className={`w-full py-2 px-4 rounded-md transition-colors font-medium ${
-                  hasChanges
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                }`}
+                className={`w-full py-2 px-4 rounded-md transition-colors font-medium ${hasChanges
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
               >
                 {hasChanges ? "Apply Changes" : "No Changes to Apply"}
               </button>
@@ -676,24 +827,21 @@ function CaptchaPlayground() {
           <div className="space-y-6">
             {/* CAPTCHA Preview */}
             <div
-              className={`rounded-2xl shadow-xl p-8 ${
-                appliedConfig.darkMode
-                  ? "bg-gray-900 border border-gray-800"
-                  : "bg-white border border-gray-100"
-              }`}
+              className={`rounded-2xl shadow-xl p-8 ${appliedConfig.darkMode
+                ? "bg-gray-900 border border-gray-800"
+                : "bg-white border border-gray-100"
+                }`}
             >
               <div className="flex items-center justify-between mb-6">
                 <h4
-                  className={`text-lg font-semibold ${
-                    appliedConfig.darkMode ? "text-white" : "text-gray-900"
-                  }`}
+                  className={`text-lg font-semibold ${appliedConfig.darkMode ? "text-white" : "text-gray-900"
+                    }`}
                 >
                   🎯 Live Preview
                 </h4>
                 <div
-                  className={`text-sm ${
-                    appliedConfig.darkMode ? "text-gray-400" : "text-gray-500"
-                  }`}
+                  className={`text-sm ${appliedConfig.darkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
                 >
                   Status:{" "}
                   {isValid ? (
@@ -708,6 +856,7 @@ function CaptchaPlayground() {
 
               <div className="flex justify-center">
                 <Captcha
+
                   type={appliedConfig.type}
                   length={appliedConfig.length}
                   darkMode={appliedConfig.darkMode}
@@ -772,11 +921,24 @@ function CaptchaPlayground() {
                     complexity: appliedConfig.sliderComplexity,
                     enableShadow: appliedConfig.sliderEnableShadow,
                   }}
+                  mathConfig={{
+                    difficulty: appliedConfig.mathDifficulty,
+                    operations: appliedConfig.mathOperations,
+                    displayFormat: appliedConfig.mathDisplayFormat,
+                    numberRange: appliedConfig.mathDifficulty === "easy" ? { min: 1, max: 10 } :
+                      appliedConfig.mathDifficulty === "medium" ? { min: 10, max: 50 } :
+                        { min: 50, max: 100 },
+                  }}
+                  patternConfig={{
+                    difficulty: appliedConfig.patternDifficulty,
+                    gridSize: appliedConfig.patternGridSize,
+                    patternTypes: appliedConfig.patternTypes,
+                  }}
                   onChange={(value) =>
                     addToEventLog(`Input changed: "${value}"`)
                   }
                   onValidate={(valid) => {
-                    setIsValid(valid);
+                    // Remove setIsValid(valid) - Redux manages validation state
                     addToEventLog(
                       `Validation: ${valid ? "Success" : "Failed"}`
                     );
@@ -792,16 +954,14 @@ function CaptchaPlayground() {
             {/* Event Log */}
             {appliedConfig.showEventLog && eventLog.length > 0 && (
               <div
-                className={`rounded-2xl shadow-xl p-6 ${
-                  appliedConfig.darkMode
-                    ? "bg-gray-900 border border-gray-800"
-                    : "bg-white border border-gray-100"
-                }`}
+                className={`rounded-2xl shadow-xl p-6 ${appliedConfig.darkMode
+                  ? "bg-gray-900 border border-gray-800"
+                  : "bg-white border border-gray-100"
+                  }`}
               >
                 <h4
-                  className={`text-lg font-semibold mb-4 ${
-                    appliedConfig.darkMode ? "text-white" : "text-gray-900"
-                  }`}
+                  className={`text-lg font-semibold mb-4 ${appliedConfig.darkMode ? "text-white" : "text-gray-900"
+                    }`}
                 >
                   📊 Event Log
                 </h4>
@@ -809,11 +969,10 @@ function CaptchaPlayground() {
                   {eventLog.map((event, index) => (
                     <div
                       key={index}
-                      className={`text-sm font-mono p-2 rounded ${
-                        appliedConfig.darkMode
-                          ? "bg-gray-800 text-gray-300"
-                          : "bg-gray-50 text-gray-600"
-                      }`}
+                      className={`text-sm font-mono p-2 rounded ${appliedConfig.darkMode
+                        ? "bg-gray-800 text-gray-300"
+                        : "bg-gray-50 text-gray-600"
+                        }`}
                     >
                       {event}
                     </div>

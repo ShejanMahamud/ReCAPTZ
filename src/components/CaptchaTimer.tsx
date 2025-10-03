@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
 import { Timer } from "lucide-react";
+import { motion } from "motion/react";
+import React from "react";
 
 interface CaptchaTimerProps {
   duration: number;
@@ -33,9 +33,8 @@ export const CaptchaTimer: React.FC<CaptchaTimerProps> = ({
 
   return (
     <div
-      className={`flex items-center gap-2 text-sm p-2 ${
-        darkMode ? "text-gray-400" : "text-gray-500"
-      }`}
+      className={`flex items-center gap-2 text-sm p-2 ${darkMode ? "text-gray-400" : "text-gray-500"
+        }`}
     >
       <Timer className="w-4 h-4" />
       <div className="relative w-full h-1 rounded-full overflow-hidden bg-gray-300">
@@ -44,9 +43,8 @@ export const CaptchaTimer: React.FC<CaptchaTimerProps> = ({
           initial={{ width: "0%", opacity: 0 }}
           animate={{ width: "100%", opacity: 1 }}
           transition={{ duration, ease: "easeInOut" }}
-          className={`absolute left-0 h-full ${
-            darkMode ? "bg-blue-500" : "bg-blue-400"
-          }`}
+          className={`absolute left-0 h-full ${darkMode ? "bg-blue-500" : "bg-blue-400"
+            }`}
         />
       </div>
       <span>{timeLeft}s</span>

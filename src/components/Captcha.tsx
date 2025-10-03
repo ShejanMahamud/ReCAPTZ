@@ -16,6 +16,7 @@ import { CaptchaCanvas } from "./CaptchaCanvas";
 import { CaptchaInput } from "./CaptchaInput";
 import { CaptchaSuccess } from "./CaptchaSuccess";
 import { CaptchaTimer } from "./CaptchaTimer";
+import PatternCaptcha from "./PatternCaptcha";
 import { SliderCaptcha } from "./SliderCaptcha";
 
 // Hook for building custom CAPTCHA UIs
@@ -63,23 +64,20 @@ const ErrorDisplay: React.FC<{
 
     switch (severity) {
       case "low":
-        return `${baseStyles} ${
-          darkMode
-            ? "bg-blue-500/10 border border-blue-500/20 text-blue-300"
-            : "bg-blue-50 border border-blue-200 text-blue-700"
-        }`;
+        return `${baseStyles} ${darkMode
+          ? "bg-blue-500/10 border border-blue-500/20 text-blue-300"
+          : "bg-blue-50 border border-blue-200 text-blue-700"
+          }`;
       case "high":
-        return `${baseStyles} ${
-          darkMode
-            ? "bg-red-500/20 border border-red-500/30 text-red-300"
-            : "bg-red-50 border border-red-300 text-red-700"
-        }`;
+        return `${baseStyles} ${darkMode
+          ? "bg-red-500/20 border border-red-500/30 text-red-300"
+          : "bg-red-50 border border-red-300 text-red-700"
+          }`;
       default:
-        return `${baseStyles} ${
-          darkMode
-            ? "bg-yellow-500/15 border border-yellow-500/25 text-yellow-300"
-            : "bg-yellow-50 border border-yellow-300 text-yellow-700"
-        }`;
+        return `${baseStyles} ${darkMode
+          ? "bg-yellow-500/15 border border-yellow-500/25 text-yellow-300"
+          : "bg-yellow-50 border border-yellow-300 text-yellow-700"
+          }`;
     }
   };
 
@@ -111,6 +109,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   confettiOptions = {},
   loadingComponent,
   sliderConfig = {},
+  mathConfig = {},
+  patternConfig = {},
   type = "mixed",
   onValidate,
 }) => {
@@ -124,6 +124,7 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
     playAudio,
     currentAttempts,
     validate,
+    validateSlider,
   } = useCaptcha();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -157,19 +158,18 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
     }
   }, [error, onError]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setUserInput("");
     setIsRefreshing(true);
 
     try {
       if (type === "slider") {
         // For slider captcha, just increment refresh key to force remount
-        // Don't call context refresh() as it's not needed and may cause issues
         setRefreshKey((prev) => prev + 1);
         if (onRefresh) onRefresh();
       } else {
         // For text captcha, use context refresh
-        await refresh();
+        refresh();
         if (onRefresh) onRefresh();
       }
     } catch {
@@ -179,10 +179,10 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
     }
   };
 
-  const handleAudioPlay = async () => {
+  const handleAudioPlay = () => {
     setIsPlayingAudio(true);
     try {
-      await playAudio();
+      playAudio();
       if (onAudioPlay) onAudioPlay();
     } catch {
       // Silently handle audio play failure
@@ -194,7 +194,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
   React.useEffect(() => {
     if (isValid) {
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      // Keep success state visible (don't auto-hide after 3 seconds)
+      // User can manually reset if needed
     }
   }, [isValid]);
 
@@ -202,6 +203,74 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
 
   if (isLoading && loadingComponent) {
     return <div className={className}>{loadingComponent}</div>;
+  }
+
+  // Show success state when verified (but not for pattern/slider as they have their own success UI)
+  if (isValid && showSuccess && type !== "pattern" && type !== "slider") {
+    return (
+      <div
+        className={`w-full max-w-md transition-all duration-500
+          ${darkMode ? "text-white" : "text-gray-900"}
+          ${className}
+          ${rtl ? "direction-rtl rtl" : ""}`}
+        dir={rtl ? "rtl" : undefined}
+      >
+        <div className={`rounded-lg border shadow-sm p-6 text-center transition-all duration-300
+          ${darkMode
+            ? "bg-gray-900 border-green-800 bg-gradient-to-br from-green-900/20 to-gray-900"
+            : "bg-white border-green-200 bg-gradient-to-br from-green-50 to-white"
+          }`}
+        >
+          <div className="flex flex-col items-center space-y-4">
+            {/* Success Icon */}
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center
+              ${darkMode
+                ? "bg-green-900/40 text-green-400"
+                : "bg-green-100 text-green-600"
+              }`}
+            >
+              <svg
+                className="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+
+            {/* Success Message */}
+            <div>
+              <h3 className={`text-lg font-semibold mb-1
+                ${darkMode ? "text-green-400" : "text-green-700"}
+              `}>
+                Verification Successful!
+              </h3>
+              <p className={`text-sm
+                ${darkMode ? "text-gray-400" : "text-gray-600"}
+              `}>
+                You have successfully completed the security check.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Show confetti if enabled */}
+        {showSuccessAnimation && showConfetti && (
+          <CaptchaSuccess
+            darkMode={darkMode}
+            i18n={i18n}
+            showConfetti={showConfetti}
+            confettiOptions={confettiOptions}
+          />
+        )}
+      </div>
+    );
   }
 
   const isHighSeverityError = errorSeverity === "high";
@@ -217,24 +286,26 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
       dir={rtl ? "rtl" : undefined}
     >
       <div className="mb-2 flex items-center justify-between">
+        {type !== "slider" && type !== "pattern" && (
+          <div className="flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5" />
+            <span className="text-sm font-medium">
+              {mergedI18n.securityCheck}
+            </span>
+            {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          </div>
+        )}
+        {(type === "slider" || type === "pattern") && <div />}
         <div className="flex items-center gap-1.5">
-          <KeyRound className="w-3.5 h-3.5" />
-          <span className="text-sm font-medium">
-            {mergedI18n.securityCheck}
-          </span>
-          {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {type !== "slider" && enableAudio && (
+          {type !== "slider" && type !== "pattern" && enableAudio && (
             <button
               onClick={handleAudioPlay}
               disabled={isPlayingAudio || shouldDisableInteraction}
               className={`p-1.5 rounded-md transition-colors disabled:opacity-50
-              ${
-                darkMode
+              ${darkMode
                   ? "hover:bg-gray-800 active:bg-gray-700"
                   : "hover:bg-gray-100 active:bg-gray-200"
-              }
+                }
               ${isPlayingAudio ? "animate-pulse" : ""}
               ${shouldDisableInteraction ? "cursor-not-allowed" : ""}`}
               aria-label={mergedI18n.listenToCaptcha}
@@ -253,10 +324,9 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
               onClick={handleRefresh}
               disabled={isRefreshing || shouldDisableInteraction}
               className={`p-1.5 rounded-md transition-colors disabled:opacity-50
-                ${
-                  darkMode
-                    ? "hover:bg-gray-800 active:bg-gray-700"
-                    : "hover:bg-gray-100 active:bg-gray-200"
+                ${darkMode
+                  ? "hover:bg-gray-800 active:bg-gray-700"
+                  : "hover:bg-gray-100 active:bg-gray-200"
                 }
                 ${isRefreshing || isLoading ? "animate-spin" : ""}
                 ${shouldDisableInteraction ? "cursor-not-allowed" : ""}`}
@@ -281,31 +351,19 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         />
       )}
 
-      {showSuccessAnimation && showSuccess && (
-        <CaptchaSuccess
-          darkMode={darkMode}
-          i18n={i18n}
-          showConfetti={showConfetti}
-          confettiOptions={confettiOptions}
-        />
-      )}
-
       <div
-        className={`rounded-lg border shadow-sm transition-all duration-200 ${
-          darkMode
-            ? "border-gray-700 bg-gray-900 shadow-gray-900/50"
-            : "border-gray-200 bg-white"
-        } ${isHighSeverityError ? "opacity-60" : ""}`}
+        className={`rounded-lg border shadow-sm transition-all duration-200 ${darkMode
+          ? "border-gray-700 bg-gray-900 shadow-gray-900/50"
+          : "border-gray-200 bg-white"
+          } ${isHighSeverityError ? "opacity-60" : ""}`}
       >
         <div
-          className={`p-3 border-b ${
-            darkMode ? "border-gray-700" : "border-gray-200"
-          }`}
+          className={`p-3 border-b ${darkMode ? "border-gray-700" : "border-gray-200"
+            }`}
         >
           <div
-            className={`transition-opacity duration-300 ${
-              isRefreshing || isLoading ? "opacity-50" : "opacity-100"
-            } ${isFocusVisible ? "border-2 border-blue-500" : ""}`}
+            className={`transition-opacity duration-300 ${isRefreshing || isLoading ? "opacity-50" : "opacity-100"
+              } ${isFocusVisible ? "border-2 border-blue-500" : ""}`}
           >
             {type === "slider" ? (
               <SliderCaptcha
@@ -318,23 +376,32 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
                 showSuccessAnimation={showSuccessAnimation}
                 showConfetti={showConfetti}
                 confettiOptions={confettiOptions}
-                onValidate={(isValid) => {
+                onValidate={(isValid, position = 0) => {
                   if (isValid) {
-                    // For successful slider validation, just mark as validated
-                    setUserInput("validated");
-
-                    // Directly call the parent onValidate to indicate success
-                    // No need to call context validate() since we're bypassing it
-                    if (onValidate) onValidate(true);
+                    // For successful slider validation, use Redux action with proper values
+                    // Note: SliderCaptcha should be updated to pass the actual target position
+                    validateSlider(position, position, 5); // tolerance of 5px
+                    // Don't call onValidate(true) here - let Redux handle it through the context
                   } else {
                     // For failed slider validation, call context validate to increment attempts
-                    // This ensures proper attempts tracking and maxAttempts handling
                     validate();
                   }
                 }}
                 onPositionChange={(position) => {
                   // Update some state to track position
                   onChange?.(position.toString());
+                }}
+              />
+            ) : type === "pattern" ? (
+              <PatternCaptcha
+                key={`pattern-${refreshKey}`}
+                config={patternConfig}
+                darkMode={darkMode}
+                disabled={isLoading || shouldDisableInteraction}
+                onValidate={(isValid) => {
+                  if (isValid) {
+                    validate();
+                  }
                 }}
               />
             ) : (
@@ -349,12 +416,11 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
             onExpire={() => refresh()}
           />
         )}
-        <div
-          className={`${
-            isFocusVisible ? "border-2 border-blue-500 p-3" : "p-3"
-          } ${inputButtonStyle}`}
-        >
-          {type !== "slider" && (
+        {type !== "slider" && type !== "pattern" && (
+          <div
+            className={`${isFocusVisible ? "border-2 border-blue-500 p-3" : "p-3"
+              } ${inputButtonStyle}`}
+          >
             <CaptchaInput
               className="w-full"
               onChange={onChange}
@@ -363,8 +429,8 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
               disabled={isLoading}
               disableSpaceToHear={disableSpaceToHear}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {typeof maxAttempts === "number" && (
@@ -376,23 +442,22 @@ const CaptchaContent: React.FC<CaptchaProps> = ({
         />
       )}
 
-      <div
-        className={`mt-1.5 text-xs ${
-          darkMode ? "text-gray-400" : "text-gray-500"
-        } ${isHighSeverityError ? "opacity-60" : ""}`}
-      >
-        {type !== "slider" &&
-          enableAudio &&
-          !disableSpaceToHear &&
-          !isHighSeverityError &&
-          ` ${mergedI18n.pressSpaceToHearCode} •`}{" "}
-        {type !== "slider" &&
-          !isHighSeverityError &&
-          `${mergedI18n.enterToValidate} •`}
-        {type !== "slider" && !isHighSeverityError && mergedI18n.escToClear}
-        {isHighSeverityError &&
-          "Service temporarily unavailable. Please try again later."}
-      </div>
+      {type !== "slider" && type !== "pattern" && (
+        <div
+          className={`mt-1.5 text-xs ${darkMode ? "text-gray-400" : "text-gray-500"
+            } ${isHighSeverityError ? "opacity-60" : ""}`}
+        >
+          {enableAudio &&
+            !disableSpaceToHear &&
+            !isHighSeverityError &&
+            ` ${mergedI18n.pressSpaceToHearCode} •`}{" "}
+          {!isHighSeverityError &&
+            `${mergedI18n.enterToValidate} •`}
+          {!isHighSeverityError && mergedI18n.escToClear}
+          {isHighSeverityError &&
+            "Service temporarily unavailable. Please try again later."}
+        </div>
+      )}
     </div>
   );
 };
@@ -408,6 +473,7 @@ export const Captcha: React.FC<CaptchaProps> = (props) => {
       onValidate={props.onValidate}
       maxAttempts={props.maxAttempts}
       onFail={props.onFail}
+      mathConfig={props.mathConfig}
     >
       <CaptchaContent {...props} />
     </CaptchaProvider>
