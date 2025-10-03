@@ -255,7 +255,7 @@ Solve simple arithmetic problems - human-friendly, bot-resistant.
   type="math"
   mathConfig={{
     difficulty: "medium",
-    operations: ["addition", "subtraction", "multiplication"],
+    operations: ["add", "subtract", "multiply", "divide"],
     range: { min: 1, max: 20 },
   }}
   onValidate={(isValid) => console.log("Math solved:", isValid)}
@@ -277,7 +277,7 @@ Solve simple arithmetic problems - human-friendly, bot-resistant.
   type="math"
   mathConfig={{
     difficulty: "hard",
-    operations: ["addition", "subtraction", "multiplication", "division"],
+    operations: ["add", "subtract", "multiply", "divide"],
     range: { min: 1, max: 50 },
     allowDecimals: false,
     showHint: true,
