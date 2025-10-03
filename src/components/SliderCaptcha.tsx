@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, CheckCircle2, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, Loader2, Shield } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConfettiOptions, SliderCaptchaConfig } from "../types";
 
@@ -49,6 +49,17 @@ interface PuzzleState {
   isDragging: boolean;
   backgroundImage: string;
   puzzlePath: Path2D;
+  rotation: number;
+  pieceType: 'classic' | 'modern' | 'complex';
+}
+
+interface SecurityMetrics {
+  startTime: number;
+  endTime: number;
+  mouseMovements: Array<{ x: number, y: number, time: number }>;
+  totalDistance: number;
+  averageSpeed: number;
+  hesitationCount: number;
 }
 
 export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
@@ -92,6 +103,8 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     isDragging: false,
     backgroundImage: "",
     puzzlePath: new Path2D(),
+    rotation: 0,
+    pieceType: 'classic',
   });
 
   const [isValidated, setIsValidated] = useState(false);
@@ -99,6 +112,16 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
   const [showFailedAttempt, setShowFailedAttempt] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Security tracking state
+  const [securityMetrics, setSecurityMetrics] = useState<SecurityMetrics>({
+    startTime: 0,
+    endTime: 0,
+    mouseMovements: [],
+    totalDistance: 0,
+    averageSpeed: 0,
+    hesitationCount: 0,
+  });
 
   // Cache for loaded images to prevent duplicate loading
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -198,16 +221,17 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
         }
       }
 
-      // Add subtle noise for texture
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const data = imageData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 10;
-        data[i] = Math.max(0, Math.min(255, data[i] + noise));
-        data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
-        data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
-      }
-      ctx.putImageData(imageData, 0, 0);
+      // Add subtle noise for texture (stable noise, not random every frame)
+      // Comment out or remove the noise to prevent constant re-rendering
+      // const imageData = ctx.getImageData(0, 0, width, height);
+      // const data = imageData.data;
+      // for (let i = 0; i < data.length; i += 4) {
+      //   const noise = (Math.random() - 0.5) * 10;
+      //   data[i] = Math.max(0, Math.min(255, data[i] + noise));
+      //   data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+      //   data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+      // }
+      // ctx.putImageData(imageData, 0, 0);
     },
     [width, height, darkMode]
   );
@@ -262,160 +286,242 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     }
   }, []);
 
-  // Create traditional puzzle piece shape
+  // Enhanced puzzle piece creation with multiple types and rotation support
   const createPuzzlePath = useCallback(
-    (x: number, y: number): Path2D => {
+    (pieceType: 'classic' | 'modern' | 'complex' = 'classic', rotation: number = 0): Path2D => {
       const path = new Path2D();
       const size = pieceSize;
 
-      // Traditional puzzle piece parameters
-      const tabSize = size * 0.2; // Size of the tabs/blanks
-      const tabRadius = tabSize * 0.8; // Roundness of tabs
+      // Always create path at (0, 0) - positioning will be handled during drawing
+      const x = 0;
+      const y = 0;
 
-      // Randomly decide which edges have tabs (outward) vs blanks (inward)
-      const hasTopTab = Math.random() > 0.5;
-      const hasRightTab = Math.random() > 0.5;
-      const hasBottomTab = Math.random() > 0.5;
-      const hasLeftTab = Math.random() > 0.5;
+      if (pieceType === 'modern') {
+        // Modern geometric piece
+        const cornerRadius = size * 0.15;
+        const indentSize = size * 0.25;
 
-      path.moveTo(x, y);
+        // Start from top-left with rounded corner
+        let currentX = x;
+        let currentY = y;
 
-      // Top edge
-      if (hasTopTab) {
-        // Draw tab on top edge
-        path.lineTo(x + size * 0.35, y);
-        path.arc(x + size * 0.5, y - tabRadius, tabRadius, Math.PI, 0, false);
+        // Top edge with center indent
+        path.moveTo(currentX + cornerRadius, currentY);
+        path.lineTo(currentX + size * 0.4, currentY);
+        path.quadraticCurveTo(currentX + size * 0.5, currentY + indentSize * 0.5, currentX + size * 0.5, currentY);
+        path.quadraticCurveTo(currentX + size * 0.6, currentY + indentSize * 0.5, currentX + size * 0.6, currentY);
+        path.lineTo(currentX + size - cornerRadius, currentY);
+        path.quadraticCurveTo(currentX + size, currentY, currentX + size, currentY + cornerRadius);
+
+        // Right edge with center indent
+        path.lineTo(currentX + size, currentY + size * 0.4);
+        path.quadraticCurveTo(currentX + size - indentSize * 0.5, currentY + size * 0.5, currentX + size, currentY + size * 0.5);
+        path.quadraticCurveTo(currentX + size - indentSize * 0.5, currentY + size * 0.6, currentX + size, currentY + size * 0.6);
+        path.lineTo(currentX + size, currentY + size - cornerRadius);
+        path.quadraticCurveTo(currentX + size, currentY + size, currentX + size - cornerRadius, currentY + size);
+
+        // Bottom edge with center indent
+        path.lineTo(currentX + size * 0.6, currentY + size);
+        path.quadraticCurveTo(currentX + size * 0.5, currentY + size - indentSize * 0.5, currentX + size * 0.5, currentY + size);
+        path.quadraticCurveTo(currentX + size * 0.4, currentY + size - indentSize * 0.5, currentX + size * 0.4, currentY + size);
+        path.lineTo(currentX + cornerRadius, currentY + size);
+        path.quadraticCurveTo(currentX, currentY + size, currentX, currentY + size - cornerRadius);
+
+        // Left edge with center indent
+        path.lineTo(currentX, currentY + size * 0.6);
+        path.quadraticCurveTo(currentX + indentSize * 0.5, currentY + size * 0.5, currentX, currentY + size * 0.5);
+        path.quadraticCurveTo(currentX + indentSize * 0.5, currentY + size * 0.4, currentX, currentY + size * 0.4);
+        path.lineTo(currentX, currentY + cornerRadius);
+        path.quadraticCurveTo(currentX, currentY, currentX + cornerRadius, currentY);
+
+      } else if (pieceType === 'complex') {
+        // Complex interlocking piece
+        const tabSize = size * 0.18;
+        const tabRadius = tabSize * 0.7;
+        const smallTabSize = size * 0.12;
+        const smallTabRadius = smallTabSize * 0.8;
+
+        path.moveTo(x, y);
+
+        // Top edge - alternating large and small tabs
+        path.lineTo(x + size * 0.25, y);
+        // Large tab
+        path.arc(x + size * 0.25 + smallTabRadius, y - smallTabSize, smallTabRadius, Math.PI, 0, false);
+        path.lineTo(x + size * 0.5, y);
+        // Large blank
+        path.arc(x + size * 0.5, y + tabSize, tabRadius, Math.PI, 0, true);
+        path.lineTo(x + size * 0.75, y);
+        // Small tab
+        path.arc(x + size * 0.75 + smallTabRadius, y - smallTabSize, smallTabRadius, Math.PI, 0, false);
         path.lineTo(x + size, y);
-      } else {
-        // Draw blank on top edge
-        path.lineTo(x + size * 0.35, y);
-        path.arc(x + size * 0.5, y + tabRadius, tabRadius, Math.PI, 0, true);
-        path.lineTo(x + size, y);
-      }
 
-      // Right edge
-      if (hasRightTab) {
-        // Draw tab on right edge
-        path.lineTo(x + size, y + size * 0.35);
-        path.arc(
-          x + size + tabRadius,
-          y + size * 0.5,
-          tabRadius,
-          -Math.PI / 2,
-          Math.PI / 2,
-          false
-        );
+        // Right edge - complex pattern
+        path.lineTo(x + size, y + size * 0.2);
+        path.arc(x + size + tabSize, y + size * 0.2 + tabRadius, tabRadius, -Math.PI / 2, Math.PI / 2, false);
+        path.lineTo(x + size, y + size * 0.5);
+        path.arc(x + size - smallTabSize, y + size * 0.5, smallTabRadius, -Math.PI / 2, Math.PI / 2, true);
+        path.lineTo(x + size, y + size * 0.8);
+        path.arc(x + size + smallTabSize, y + size * 0.8 + smallTabRadius, smallTabRadius, -Math.PI / 2, Math.PI / 2, false);
         path.lineTo(x + size, y + size);
-      } else {
-        // Draw blank on right edge
-        path.lineTo(x + size, y + size * 0.35);
-        path.arc(
-          x + size - tabRadius,
-          y + size * 0.5,
-          tabRadius,
-          -Math.PI / 2,
-          Math.PI / 2,
-          true
-        );
-        path.lineTo(x + size, y + size);
-      }
 
-      // Bottom edge
-      if (hasBottomTab) {
-        // Draw tab on bottom edge
-        path.lineTo(x + size * 0.65, y + size);
-        path.arc(
-          x + size * 0.5,
-          y + size + tabRadius,
-          tabRadius,
-          0,
-          Math.PI,
-          false
-        );
+        // Bottom edge - mirrored top edge
+        path.lineTo(x + size * 0.75, y + size);
+        path.arc(x + size * 0.75 - smallTabRadius, y + size + smallTabSize, smallTabRadius, 0, Math.PI, false);
+        path.lineTo(x + size * 0.5, y + size);
+        path.arc(x + size * 0.5, y + size - tabSize, tabRadius, 0, Math.PI, true);
+        path.lineTo(x + size * 0.25, y + size);
+        path.arc(x + size * 0.25 - smallTabRadius, y + size + smallTabSize, smallTabRadius, 0, Math.PI, false);
         path.lineTo(x, y + size);
-      } else {
-        // Draw blank on bottom edge
-        path.lineTo(x + size * 0.65, y + size);
-        path.arc(
-          x + size * 0.5,
-          y + size - tabRadius,
-          tabRadius,
-          0,
-          Math.PI,
-          true
-        );
-        path.lineTo(x, y + size);
-      }
 
-      // Left edge
-      if (hasLeftTab) {
-        // Draw tab on left edge
-        path.lineTo(x, y + size * 0.65);
-        path.arc(
-          x - tabRadius,
-          y + size * 0.5,
-          tabRadius,
-          Math.PI / 2,
-          -Math.PI / 2,
-          false
-        );
+        // Left edge - mirrored right edge
+        path.lineTo(x, y + size * 0.8);
+        path.arc(x - smallTabSize, y + size * 0.8 - smallTabRadius, smallTabRadius, Math.PI / 2, -Math.PI / 2, false);
+        path.lineTo(x, y + size * 0.5);
+        path.arc(x + smallTabSize, y + size * 0.5, smallTabRadius, Math.PI / 2, -Math.PI / 2, true);
+        path.lineTo(x, y + size * 0.2);
+        path.arc(x - tabSize, y + size * 0.2 - tabRadius, tabRadius, Math.PI / 2, -Math.PI / 2, false);
         path.lineTo(x, y);
+
       } else {
-        // Draw blank on left edge
-        path.lineTo(x, y + size * 0.65);
-        path.arc(
-          x + tabRadius,
-          y + size * 0.5,
-          tabRadius,
-          Math.PI / 2,
-          -Math.PI / 2,
-          true
-        );
-        path.lineTo(x, y);
+        // Classic puzzle piece (enhanced)
+        const tabSize = size * 0.22;
+        const tabRadius = tabSize * 0.75;
+
+        // Randomly decide which edges have tabs vs blanks, but ensure interlocking
+        const topPattern = Math.random() > 0.5 ? 1 : -1; // 1 = tab, -1 = blank
+        const rightPattern = Math.random() > 0.5 ? 1 : -1;
+        const bottomPattern = Math.random() > 0.5 ? 1 : -1;
+        const leftPattern = Math.random() > 0.5 ? 1 : -1;
+
+        path.moveTo(x, y);
+
+        // Top edge
+        if (topPattern > 0) {
+          path.lineTo(x + size * 0.35, y);
+          path.arc(x + size * 0.5, y - tabRadius * topPattern, tabRadius, Math.PI, 0, false);
+          path.lineTo(x + size * 0.65, y);
+          path.arc(x + size * 0.75, y - (tabRadius * 0.6) * topPattern, tabRadius * 0.6, Math.PI, 0, false);
+          path.lineTo(x + size, y);
+        } else {
+          path.lineTo(x + size * 0.35, y);
+          path.arc(x + size * 0.5, y + tabRadius * Math.abs(topPattern), tabRadius, Math.PI, 0, true);
+          path.lineTo(x + size * 0.65, y);
+          path.arc(x + size * 0.75, y + (tabRadius * 0.6) * Math.abs(topPattern), tabRadius * 0.6, Math.PI, 0, true);
+          path.lineTo(x + size, y);
+        }
+
+        // Right edge
+        if (rightPattern > 0) {
+          path.lineTo(x + size, y + size * 0.35);
+          path.arc(x + size + tabRadius * rightPattern, y + size * 0.5, tabRadius, -Math.PI / 2, Math.PI / 2, false);
+          path.lineTo(x + size, y + size * 0.65);
+          path.arc(x + size + (tabRadius * 0.6) * rightPattern, y + size * 0.75, tabRadius * 0.6, -Math.PI / 2, Math.PI / 2, false);
+          path.lineTo(x + size, y + size);
+        } else {
+          path.lineTo(x + size, y + size * 0.35);
+          path.arc(x + size - tabRadius * Math.abs(rightPattern), y + size * 0.5, tabRadius, -Math.PI / 2, Math.PI / 2, true);
+          path.lineTo(x + size, y + size * 0.65);
+          path.arc(x + size - (tabRadius * 0.6) * Math.abs(rightPattern), y + size * 0.75, tabRadius * 0.6, -Math.PI / 2, Math.PI / 2, true);
+          path.lineTo(x + size, y + size);
+        }
+
+        // Bottom edge (mirrored top)
+        if (bottomPattern > 0) {
+          path.lineTo(x + size * 0.65, y + size);
+          path.arc(x + size * 0.5, y + size + tabRadius * bottomPattern, tabRadius, 0, Math.PI, false);
+          path.lineTo(x + size * 0.35, y + size);
+          path.arc(x + size * 0.25, y + size + (tabRadius * 0.6) * bottomPattern, tabRadius * 0.6, 0, Math.PI, false);
+          path.lineTo(x, y + size);
+        } else {
+          path.lineTo(x + size * 0.65, y + size);
+          path.arc(x + size * 0.5, y + size - tabRadius * Math.abs(bottomPattern), tabRadius, 0, Math.PI, true);
+          path.lineTo(x + size * 0.35, y + size);
+          path.arc(x + size * 0.25, y + size - (tabRadius * 0.6) * Math.abs(bottomPattern), tabRadius * 0.6, 0, Math.PI, true);
+          path.lineTo(x, y + size);
+        }
+
+        // Left edge (mirrored right)
+        if (leftPattern > 0) {
+          path.lineTo(x, y + size * 0.65);
+          path.arc(x - tabRadius * leftPattern, y + size * 0.5, tabRadius, Math.PI / 2, -Math.PI / 2, false);
+          path.lineTo(x, y + size * 0.35);
+          path.arc(x - (tabRadius * 0.6) * leftPattern, y + size * 0.25, tabRadius * 0.6, Math.PI / 2, -Math.PI / 2, false);
+          path.lineTo(x, y);
+        } else {
+          path.lineTo(x, y + size * 0.65);
+          path.arc(x + tabRadius * Math.abs(leftPattern), y + size * 0.5, tabRadius, Math.PI / 2, -Math.PI / 2, true);
+          path.lineTo(x, y + size * 0.35);
+          path.arc(x + (tabRadius * 0.6) * Math.abs(leftPattern), y + size * 0.25, tabRadius * 0.6, Math.PI / 2, -Math.PI / 2, true);
+          path.lineTo(x, y);
+        }
       }
 
       path.closePath();
+
+      // Apply rotation if specified
+      if (rotation !== 0) {
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const rotatedPath = new Path2D();
+        const transform = new DOMMatrix();
+        transform.translateSelf(centerX, centerY);
+        transform.rotateSelf(rotation);
+        transform.translateSelf(-centerX, -centerY);
+        rotatedPath.addPath(path, transform);
+        return rotatedPath;
+      }
+
       return path;
     },
     [pieceSize]
   );
 
-  // Initialize puzzle
-  const initializePuzzle = useCallback(async () => {
-    const targetX = Math.random() * (width - pieceSize - 80) + 60;
-    const targetY = Math.random() * (height - pieceSize - 40) + 20;
+  // Initialize puzzle - using refs to avoid dependency changes
+  const initializePuzzleRef = useRef<(() => Promise<void>) | null>(null);
 
-    let bgImage = backgroundImage;
+  useEffect(() => {
+    initializePuzzleRef.current = async () => {
+      const targetX = Math.random() * (width - pieceSize - 80) + 60;
+      const targetY = Math.random() * (height - pieceSize - 40) + 20;
 
-    if (!bgImage) {
-      if (backgroundImages && backgroundImages.length > 0) {
-        bgImage =
-          backgroundImages[Math.floor(Math.random() * backgroundImages.length)];
-      } else {
-        bgImage = await fetchPexelsPhoto();
+      let bgImage = backgroundImage;
+
+      if (!bgImage) {
+        if (backgroundImages && backgroundImages.length > 0) {
+          bgImage =
+            backgroundImages[Math.floor(Math.random() * backgroundImages.length)];
+        } else {
+          bgImage = await fetchPexelsPhoto();
+        }
       }
-    }
 
-    const puzzlePath = createPuzzlePath(targetX, targetY);
+      const pieceTypes: ('classic' | 'modern' | 'complex')[] = ['classic', 'modern', 'complex'];
+      const randomPieceType = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
+      const randomRotation = Math.floor(Math.random() * 4) * 90; // 0, 90, 180, or 270 degrees
 
-    // Clear image cache and current URL when initializing new puzzle
-    imageCache.current.clear();
-    currentImageUrl.current = "";
+      const puzzlePath = createPuzzlePath(randomPieceType, randomRotation);
 
-    setPuzzleState({
-      targetX,
-      targetY,
-      sliderPosition: 0,
-      isDragging: false,
-      backgroundImage: bgImage || "",
-      puzzlePath,
-    });
+      // Clear image cache and current URL when initializing new puzzle
+      imageCache.current.clear();
+      currentImageUrl.current = "";
 
-    // Reset UI states but keep success animation if it's currently showing
-    setIsValidated(false);
-    setShowFailedAttempt(false);
-    setDragOffset(0);
-    // Don't reset showSuccess here - let it be managed by the validation function
+      setPuzzleState({
+        targetX,
+        targetY,
+        sliderPosition: 0, // Start piece at the beginning
+        isDragging: false,
+        backgroundImage: bgImage || "",
+        puzzlePath,
+        rotation: randomRotation,
+        pieceType: randomPieceType,
+      });
+
+      // Reset UI states but keep success animation if it's currently showing
+      setIsValidated(false);
+      setShowFailedAttempt(false);
+      setDragOffset(0);
+      // Don't reset showSuccess here - let it be managed by the validation function
+    };
   }, [
     width,
     height,
@@ -425,6 +531,12 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     createPuzzlePath,
     fetchPexelsPhoto,
   ]);
+
+  const initializePuzzle = useCallback(async () => {
+    if (initializePuzzleRef.current) {
+      await initializePuzzleRef.current();
+    }
+  }, []);
 
   // Enhanced background drawing
   const drawBackground = useCallback(() => {
@@ -477,14 +589,20 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     (ctx: CanvasRenderingContext2D) => {
       ctx.save();
 
+      // Create hole path translated to target position
+      const holePath = new Path2D();
+      const transform = new DOMMatrix();
+      transform.translateSelf(puzzleState.targetX, puzzleState.targetY);
+      holePath.addPath(puzzleState.puzzlePath, transform);
+
       // Create hole with better shadow effect
       ctx.globalCompositeOperation = "destination-out";
-      ctx.fill(puzzleState.puzzlePath);
+      ctx.fill(holePath);
 
       // Fill hole with white background for better visibility
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = "white";
-      ctx.fill(puzzleState.puzzlePath);
+      ctx.fill(holePath);
 
       // Add sophisticated hole border
       ctx.globalCompositeOperation = "source-over";
@@ -499,25 +617,25 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
           ? "rgba(255,255,255,0.1)"
           : "rgba(0,0,0,0.1)";
         ctx.lineWidth = 4;
-        ctx.stroke(puzzleState.puzzlePath);
+        ctx.stroke(holePath);
       }
 
       // Main border
       ctx.shadowColor = "transparent";
       ctx.strokeStyle = darkMode ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
       ctx.lineWidth = 2;
-      ctx.stroke(puzzleState.puzzlePath);
+      ctx.stroke(holePath);
 
       // Inner highlight
       ctx.strokeStyle = darkMode
         ? "rgba(255,255,255,0.1)"
         : "rgba(255,255,255,0.5)";
       ctx.lineWidth = 1;
-      ctx.stroke(puzzleState.puzzlePath);
+      ctx.stroke(holePath);
 
       ctx.restore();
     },
-    [puzzleState.puzzlePath, darkMode, enableShadow]
+    [puzzleState.puzzlePath, puzzleState.targetX, puzzleState.targetY, darkMode, enableShadow]
   );
 
   // Enhanced slider piece drawing
@@ -533,13 +651,10 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     const pieceX = puzzleState.sliderPosition;
     const pieceY = puzzleState.targetY;
 
-    // Use the stored puzzle path translated to current position
-    const deltaX = pieceX - puzzleState.targetX;
-    const deltaY = 0; // Y position doesn't change
-
+    // Create piece path translated to current position
     const piecePath = new Path2D();
     const transform = new DOMMatrix();
-    transform.translateSelf(deltaX, deltaY);
+    transform.translateSelf(pieceX, pieceY);
     piecePath.addPath(puzzleState.puzzlePath, transform);
 
     ctx.save();
@@ -605,10 +720,10 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       ctx.strokeStyle = isValidated
         ? "#22c55e"
         : puzzleState.isDragging
-        ? "#3b82f6"
-        : darkMode
-        ? "#60a5fa"
-        : "#3b82f6";
+          ? "#3b82f6"
+          : darkMode
+            ? "#60a5fa"
+            : "#3b82f6";
       ctx.lineWidth = 3;
       ctx.stroke(piecePath);
     }
@@ -674,10 +789,10 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       ctx.strokeStyle = isValidated
         ? "#22c55e"
         : puzzleState.isDragging
-        ? "#3b82f6"
-        : darkMode
-        ? "#60a5fa"
-        : "#3b82f6";
+          ? "#3b82f6"
+          : darkMode
+            ? "#60a5fa"
+            : "#3b82f6";
       ctx.lineWidth = 3;
       ctx.stroke(piecePath);
 
@@ -697,15 +812,57 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     ]
   );
 
-  // Enhanced validation
+  // Enhanced validation with security features
   const validatePosition = useCallback(
     (position: number) => {
-      const isValid = Math.abs(position - puzzleState.targetX) <= tolerance;
+      const endTime = Date.now();
+      const totalTime = securityMetrics.startTime > 0 ? endTime - securityMetrics.startTime : 0;
+
+      // Position accuracy check (most important)
+      const positionValid = Math.abs(position - puzzleState.targetX) <= tolerance;
+
+      // Security checks (more lenient)
+      const securityChecks = {
+        // Time-based validation (too fast = suspicious, but allow if startTime wasn't set)
+        timeValid: securityMetrics.startTime === 0 || (totalTime > 200 && totalTime < 60000), // Between 0.2s and 60s
+
+        // Movement pattern analysis (relaxed)
+        movementValid: securityMetrics.startTime === 0 || securityMetrics.totalDistance > 10,
+
+        // Hesitation check (too many stops = human-like)
+        hesitationValid: securityMetrics.hesitationCount <= 10,
+
+        // Position accuracy
+        positionValid,
+
+        // Rotation validation (if applicable)
+        rotationValid: puzzleState.rotation === 0 || Math.abs(position - puzzleState.targetX) <= tolerance * 1.5,
+      };
+
+      // Calculate security score (0-1, higher is more suspicious)
+      const failedChecks = Object.values(securityChecks).filter(check => !check).length;
+      const securityScore = failedChecks / Object.keys(securityChecks).length;
+
+      // Enhanced validation logic - prioritize position accuracy
+      const isValid = positionValid && (securityMetrics.startTime === 0 || securityScore < 0.6);
+
+      console.log('Validation:', { position, targetX: puzzleState.targetX, tolerance, positionValid, securityChecks, securityScore, isValid });
+
       setIsValidated(isValid);
 
       if (isValid) {
         // Success - keep piece in position and call parent validation
         onValidate?.(true, position);
+
+        // Reset security metrics for next attempt
+        setSecurityMetrics({
+          startTime: 0,
+          endTime: 0,
+          mouseMovements: [],
+          totalDistance: 0,
+          averageSpeed: 0,
+          hesitationCount: 0,
+        });
 
         // Show success animation if enabled
         if (showSuccessAnimation) {
@@ -739,10 +896,11 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
         // Reset failed state after animation
         setTimeout(() => {
           setShowFailedAttempt(false);
-          setPuzzleState((prev) => ({
-            ...prev,
-            sliderPosition: 0,
-          }));
+          // Don't reset position - let user try again from current position
+          // setPuzzleState((prev) => ({
+          //   ...prev,
+          //   sliderPosition: prev.targetX,
+          // }));
         }, 800);
 
         // Call parent validation with failure
@@ -753,15 +911,18 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     },
     [
       puzzleState.targetX,
+      puzzleState.rotation,
+      puzzleState.sliderPosition,
       tolerance,
       onValidate,
       showSuccessAnimation,
       showConfetti,
       confettiOptions,
+      securityMetrics,
     ]
   );
 
-  // Handle pointer events with improved UX
+  // Handle pointer events with improved UX and security tracking
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (disabled || isValidated) return;
@@ -783,8 +944,19 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
         y >= pieceY - 5 &&
         y <= pieceY + pieceSize + 5
       ) {
+        // Start security tracking with proper initialization
+        const currentTime = Date.now();
+        setSecurityMetrics({
+          startTime: currentTime,
+          endTime: 0,
+          mouseMovements: [{ x: e.clientX, y: e.clientY, time: currentTime }],
+          totalDistance: 0,
+          averageSpeed: 0,
+          hesitationCount: 0,
+        });
+
         // Calculate offset from piece center for smooth dragging
-        const offsetX = x - (pieceX + pieceSize / 2);
+        const offsetX = x - pieceX;
         setDragOffset(offsetX);
         setPuzzleState((prev) => ({ ...prev, isDragging: true }));
         e.preventDefault();
@@ -808,7 +980,7 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
 
-      // Use the same calculation as canvas dragging for consistency
+      // Convert track position to puzzle piece position
       const trackPosition = Math.max(0, Math.min(x, rect.width));
       const newPosition = Math.max(
         0,
@@ -817,6 +989,17 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
           width - pieceSize
         )
       );
+
+      // Initialize security metrics for track-based dragging
+      const currentTime = Date.now();
+      setSecurityMetrics({
+        startTime: currentTime,
+        endTime: 0,
+        mouseMovements: [{ x: e.clientX, y: e.clientY, time: currentTime }],
+        totalDistance: 0,
+        averageSpeed: 0,
+        hesitationCount: 0,
+      });
 
       // Reset drag offset for track-based dragging
       setDragOffset(0);
@@ -831,7 +1014,7 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
     [disabled, isValidated, pieceSize, width, onPositionChange, setDragOffset]
   );
 
-  // Enhanced global pointer handling
+  // Enhanced global pointer handling with security tracking
   useEffect(() => {
     const handleGlobalPointerMove = (e: PointerEvent) => {
       if (!puzzleState.isDragging || disabled) return;
@@ -844,8 +1027,29 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       // Use consistent position calculation with drag offset for smooth dragging
       const newPosition = Math.max(
         0,
-        Math.min(x - pieceSize / 2 - dragOffset, width - pieceSize)
+        Math.min(x - dragOffset, width - pieceSize)
       );
+
+      // Update security metrics
+      setSecurityMetrics(prev => {
+        const currentTime = Date.now();
+        const lastMovement = prev.mouseMovements[prev.mouseMovements.length - 1];
+        const timeDiff = lastMovement ? currentTime - lastMovement.time : 0;
+        const distance = lastMovement ? Math.sqrt(
+          Math.pow(e.clientX - lastMovement.x, 2) + Math.pow(e.clientY - lastMovement.y, 2)
+        ) : 0;
+
+        // Detect hesitation (very slow movement)
+        const isHesitation = timeDiff > 200 && distance < 5;
+
+        return {
+          ...prev,
+          mouseMovements: [...prev.mouseMovements, { x: e.clientX, y: e.clientY, time: currentTime }],
+          totalDistance: prev.totalDistance + distance,
+          averageSpeed: (prev.totalDistance + distance) / (currentTime - prev.startTime) * 1000,
+          hesitationCount: prev.hesitationCount + (isHesitation ? 1 : 0),
+        };
+      });
 
       setPuzzleState((prev) => ({ ...prev, sliderPosition: newPosition }));
       onPositionChange?.(newPosition);
@@ -899,45 +1103,94 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
 
     // Initialize the puzzle
     initializePuzzle();
-  }, [initializePuzzle]);
+  }, []); // Only run on mount
 
-  // Reinitialize when dimensions change
+  // Reinitialize when dimensions change significantly (but not on initial mount)
+  const prevDimensionsRef = useRef({ width: 0, height: 0 });
   useEffect(() => {
-    if (width && height) {
+    const prevWidth = prevDimensionsRef.current.width;
+    const prevHeight = prevDimensionsRef.current.height;
+
+    // Only reinitialize if dimensions actually changed and puzzle is already initialized
+    if (prevWidth > 0 && prevHeight > 0 &&
+      (Math.abs(width - prevWidth) > 10 || Math.abs(height - prevHeight) > 10)) {
       initializePuzzle();
     }
-  }, [width, height, initializePuzzle]);
 
-  // Redraw when state changes
+    prevDimensionsRef.current = { width, height };
+  }, [width, height]);
+
+  // Redraw when puzzle state changes (not on every function recreation)
   useEffect(() => {
     drawBackground();
-  }, [drawBackground]);
-
-  useEffect(() => {
     drawSliderPiece();
-  }, [drawSliderPiece]);
+  }, [
+    puzzleState.backgroundImage,
+    puzzleState.targetX,
+    puzzleState.targetY,
+    puzzleState.sliderPosition,
+    puzzleState.isDragging,
+    isValidated,
+    width,
+    height,
+  ]);
 
   const progressPercentage =
     (puzzleState.sliderPosition / (width - pieceSize)) * 100;
 
   return (
-    <div className="slider-captcha-container w-full">
+    <div
+      className="slider-captcha-container w-full"
+      role="region"
+      aria-label="Slider CAPTCHA verification"
+      aria-describedby="captcha-instructions"
+    >
+      {/* Hidden instructions for screen readers */}
+      <div id="captcha-instructions" className="sr-only">
+        Interactive puzzle verification. Drag the puzzle piece to complete the image. Current status: {isValidated ? 'Verified' : puzzleState.isDragging ? 'Dragging piece' : 'Ready to verify'}
+      </div>
+
       {/* Main puzzle area */}
       <motion.div
         ref={containerRef}
-        className={`relative rounded-xl overflow-hidden border-2 transition-all duration-300 w-full ${
-          isValidated
-            ? "border-green-400 shadow-green-200/50 shadow-lg"
-            : showFailedAttempt
+        className={`relative rounded-xl overflow-hidden border-2 transition-all duration-300 w-full ${isValidated
+          ? "border-green-400 shadow-green-200/50 shadow-lg"
+          : showFailedAttempt
             ? "border-red-400 shadow-red-200/50 shadow-lg"
             : puzzleState.isDragging
-            ? "border-blue-400 shadow-blue-200/50 shadow-lg"
-            : darkMode
-            ? "border-gray-600 hover:border-gray-500"
-            : "border-gray-300 hover:border-gray-400"
-        } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              ? "border-blue-400 shadow-blue-200/50 shadow-lg"
+              : darkMode
+                ? "border-gray-600 hover:border-gray-500"
+                : "border-gray-300 hover:border-gray-400"
+          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
         style={{ height }}
         onPointerDown={handlePointerDown}
+        onKeyDown={(e) => {
+          if (disabled || isValidated) return;
+
+          // Keyboard navigation support
+          const step = 10;
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const newPosition = Math.max(0, puzzleState.sliderPosition - step);
+            setPuzzleState(prev => ({ ...prev, sliderPosition: newPosition }));
+            onPositionChange?.(newPosition);
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            const newPosition = Math.min(width - pieceSize, puzzleState.sliderPosition + step);
+            setPuzzleState(prev => ({ ...prev, sliderPosition: newPosition }));
+            onPositionChange?.(newPosition);
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            validatePosition(puzzleState.sliderPosition);
+          }
+        }}
+        tabIndex={disabled ? -1 : 0}
+        role="slider"
+        aria-valuemin={0}
+        aria-valuemax={width - pieceSize}
+        aria-valuenow={puzzleState.sliderPosition}
+        aria-label={`Puzzle piece position: ${Math.round((puzzleState.sliderPosition / (width - pieceSize)) * 100)}% complete`}
         animate={{
           scale: puzzleState.isDragging ? 1.01 : 1,
         }}
@@ -966,18 +1219,16 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm ${
-                darkMode ? "bg-gray-900/80" : "bg-white/80"
-              }`}
+              className={`absolute inset-0 flex items-center justify-center backdrop-blur-sm ${darkMode ? "bg-gray-900/80" : "bg-white/80"
+                }`}
             >
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className={`px-6 py-4 rounded-xl font-medium shadow-lg ${
-                  darkMode
-                    ? "bg-gray-800 text-gray-200 border border-gray-600"
-                    : "bg-white text-gray-700 border border-gray-200"
-                }`}
+                className={`px-6 py-4 rounded-xl font-medium shadow-lg ${darkMode
+                  ? "bg-gray-800 text-gray-200 border border-gray-600"
+                  : "bg-white text-gray-700 border border-gray-200"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
@@ -993,32 +1244,57 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
       <div className="mt-4">
         <div
           ref={sliderTrackRef}
-          className={`relative h-10 rounded-xl border-2 transition-all duration-300 overflow-hidden ${
-            isValidated
-              ? "border-green-400 bg-green-50"
-              : showFailedAttempt
+          className={`relative h-10 rounded-xl border-2 transition-all duration-300 overflow-hidden ${isValidated
+            ? "border-green-400 bg-green-50"
+            : showFailedAttempt
               ? "border-red-400 bg-red-50"
               : puzzleState.isDragging
-              ? "border-blue-400 bg-blue-50"
-              : darkMode
-              ? "border-gray-600 bg-gray-700"
-              : "border-gray-300 bg-gray-100"
-          }`}
+                ? "border-blue-400 bg-blue-50"
+                : darkMode
+                  ? "border-gray-600 bg-gray-700"
+                  : "border-gray-300 bg-gray-100"
+            }`}
           onPointerDown={handleTrackPointerDown}
+          role="slider"
+          aria-label="Verification progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progressPercentage)}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (disabled || isValidated) return;
+
+            const step = 5;
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              const newPercentage = Math.max(0, progressPercentage - step);
+              const newPosition = (newPercentage / 100) * (width - pieceSize);
+              setPuzzleState(prev => ({ ...prev, sliderPosition: newPosition }));
+              onPositionChange?.(newPosition);
+            } else if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              const newPercentage = Math.min(100, progressPercentage + step);
+              const newPosition = (newPercentage / 100) * (width - pieceSize);
+              setPuzzleState(prev => ({ ...prev, sliderPosition: newPosition }));
+              onPositionChange?.(newPosition);
+            } else if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              validatePosition(puzzleState.sliderPosition);
+            }
+          }}
         >
           {/* Progress fill */}
           <motion.div
-            className={`absolute left-0 top-0 bottom-0 rounded-lg transition-colors duration-300 ${
-              isValidated
-                ? "bg-green-200"
-                : showFailedAttempt
+            className={`absolute left-0 top-0 bottom-0 rounded-lg transition-colors duration-300 ${isValidated
+              ? "bg-green-200"
+              : showFailedAttempt
                 ? "bg-red-200"
                 : puzzleState.isDragging
-                ? "bg-blue-200"
-                : darkMode
-                ? "bg-gray-600"
-                : "bg-gray-200"
-            }`}
+                  ? "bg-blue-200"
+                  : darkMode
+                    ? "bg-gray-600"
+                    : "bg-gray-200"
+              }`}
             style={{ width: `${progressPercentage}%` }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -1026,21 +1302,19 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
 
           {/* Slider handle */}
           <motion.div
-            className={`absolute top-0.5 bottom-0.5 w-12 rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center ${
-              isValidated
-                ? "bg-green-500 border-green-600 text-white"
-                : showFailedAttempt
+            className={`absolute top-0.5 bottom-0.5 w-12 rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center ${isValidated
+              ? "bg-green-500 border-green-600 text-white"
+              : showFailedAttempt
                 ? "bg-red-500 border-red-600 text-white"
                 : puzzleState.isDragging
-                ? "bg-blue-500 border-blue-600 text-white cursor-grabbing"
-                : darkMode
-                ? "bg-gray-500 border-gray-400 text-white cursor-grab"
-                : "bg-white border-gray-400 text-gray-600 cursor-grab"
-            } ${disabled ? "cursor-not-allowed" : ""}`}
+                  ? "bg-blue-500 border-blue-600 text-white cursor-grabbing"
+                  : darkMode
+                    ? "bg-gray-500 border-gray-400 text-white cursor-grab"
+                    : "bg-white border-gray-400 text-gray-600 cursor-grab"
+              } ${disabled ? "cursor-not-allowed" : ""}`}
             style={{
-              left: `${
-                (puzzleState.sliderPosition / (width - pieceSize)) * (100 - 12)
-              }%`,
+              left: `${(puzzleState.sliderPosition / (width - pieceSize)) * (100 - 12)
+                }%`,
             }}
             animate={{
               scale: puzzleState.isDragging ? 1.05 : 1,
@@ -1064,13 +1338,12 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
           {/* Track indicators */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span
-              className={`text-xs font-medium transition-opacity duration-200 ${
-                isValidated || progressPercentage > 30 || puzzleState.isDragging
-                  ? "opacity-0"
-                  : darkMode
+              className={`text-xs font-medium transition-opacity duration-200 ${isValidated || progressPercentage > 30 || puzzleState.isDragging
+                ? "opacity-0"
+                : darkMode
                   ? "text-gray-400"
                   : "text-gray-500"
-              }`}
+                }`}
             >
               Slide to verify →
             </span>
@@ -1078,39 +1351,75 @@ export const SliderCaptcha: React.FC<SliderCaptchaProps> = ({
         </div>
       </div>
 
-      {/* Success Animation */}
+      {/* Security Status Indicator */}
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className={`w-4 h-4 ${isValidated ? 'text-green-500' : puzzleState.isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+          <span className={`text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            {isValidated ? 'Verified' : puzzleState.isDragging ? 'Verifying...' : 'Security Check'}
+          </span>
+          {/* Debug: Show distance from target */}
+          {puzzleState.isDragging && (
+            <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              (Distance: {Math.abs(puzzleState.sliderPosition - puzzleState.targetX).toFixed(0)}px, Need: ≤{tolerance}px)
+            </span>
+          )}
+        </div>
+
+        {/* Piece type indicator */}
+        <div className={`text-xs px-2 py-1 rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+          {puzzleState.pieceType} {puzzleState.rotation > 0 && `(${puzzleState.rotation}°)`}
+        </div>
+      </div>
+
+      {/* Enhanced Success Animation */}
       <AnimatePresence>
         {showSuccess && showSuccessAnimation && (
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            className={`mt-4 flex items-center justify-center p-4 rounded-lg border-2 ${
-              darkMode
-                ? "bg-green-500/10 border-green-400/30"
-                : "bg-green-50 border-green-200"
-            }`}
-          >
-            <motion.div
-              initial={{ rotate: 0 }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
-            >
-              <CheckCircle2
-                className={`w-5 h-5 ${
-                  darkMode ? "text-green-400" : "text-green-500"
-                }`}
-              />
-            </motion.div>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`ml-3 font-semibold text-sm ${
-                darkMode ? "text-green-400" : "text-green-600"
+            initial={{ scale: 0, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0, y: -20 }}
+            className={`mt-4 p-4 rounded-xl border-2 shadow-lg ${darkMode
+              ? "bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-400/30"
+              : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
               }`}
-            >
-              Verification Successful!
-            </motion.p>
+          >
+            <div className="flex items-center gap-3">
+              <motion.div
+                initial={{ rotate: 0, scale: 0 }}
+                animate={{ rotate: 360, scale: 1 }}
+                transition={{ duration: 0.6, type: "spring" }}
+                className="relative"
+              >
+                <CheckCircle2
+                  className={`w-6 h-6 ${darkMode ? "text-green-400" : "text-green-500"}`}
+                />
+                <motion.div
+                  initial={{ scale: 0, opacity: 1 }}
+                  animate={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+                  className="absolute inset-0 rounded-full bg-green-400/30"
+                />
+              </motion.div>
+              <div className="flex-1">
+                <motion.p
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className={`font-semibold text-sm ${darkMode ? "text-green-400" : "text-green-700"}`}
+                >
+                  Verification Successful!
+                </motion.p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className={`text-xs mt-1 ${darkMode ? "text-green-300/80" : "text-green-600/80"}`}
+                >
+                  Security check passed • Puzzle solved
+                </motion.p>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

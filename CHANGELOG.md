@@ -2,6 +2,67 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2025-10-03
+
+### 🎉 **MAJOR UPDATE: Client-Side Only Architecture**
+
+**💡 Breaking Changes - Simplified & Cost-Effective**
+
+This version completely removes all server-side dependencies, making ReCAPTZ a purely client-side library. This change significantly reduces complexity, eliminates server maintenance costs, and makes the package much more lightweight and easier to use.
+
+**🚀 What's New**
+
+- **Pure Client-Side**: No more server dependencies or costs
+- **Lightweight**: Significantly reduced bundle size
+- **Simplified API**: Cleaner, more straightforward implementation
+- **Zero Configuration**: Works out of the box without any setup
+- **Better Performance**: Faster initialization and validation
+- **Offline Support**: Works completely offline
+
+**🔧 Improvements**
+
+- **Removed Server Dependencies**: No more ReCAPTZClient, modeManager, or server communication
+- **Simplified Types**: Cleaner TypeScript definitions focused on client-side usage
+- **Updated Hooks**: All hooks now work synchronously for better performance
+- **Streamlined Context**: CaptchaContext is now purely client-side
+- **Better Error Handling**: Simplified error management without network concerns
+
+**💔 Breaking Changes**
+
+- **Removed Server Mode**: `configureReCAPTZ` API no longer available
+- **Synchronous Validation**: `validate()` and `refresh()` are now synchronous
+- **No Session Tokens**: Server-side session management removed
+- **Simplified Audio**: Audio now uses only Web Speech API
+- **Updated Hook Returns**: Removed Promise returns from validation hooks
+
+**📦 Migration Guide**
+
+```tsx
+// Old (v1.x) - Server/Client mode
+import { configureReCAPTZ } from "recaptz";
+configureReCAPTZ.setMode("server", "https://api.example.com");
+
+// New (v2.x) - Client-only (no configuration needed)
+import { Captcha } from "recaptz";
+// Just use it directly!
+
+// Old async validation
+const isValid = await validate();
+
+// New sync validation
+const isValid = validate();
+```
+
+**🎯 Why This Change?**
+
+- **Cost Reduction**: No server infrastructure to maintain
+- **Simplicity**: Easier to use and integrate
+- **Reliability**: No network dependencies
+- **Performance**: Faster with no API calls
+- **Scalability**: Pure client-side scales infinitely
+
+---
+
 ## [1.3.4] - 2025-01-27
 
 ### 🎉 What's New

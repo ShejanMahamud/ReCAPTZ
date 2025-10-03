@@ -1,4 +1,4 @@
-export type CaptchaType = "numbers" | "letters" | "mixed" | "custom" | "slider";
+export type CaptchaType = "numbers" | "letters" | "mixed" | "custom" | "slider" | "math" | "pattern";
 
 export type CaptchaTheme = "light" | "dark" | "auto";
 
@@ -19,6 +19,35 @@ export interface SliderCaptchaConfig {
   enableShadow?: boolean;
   /** Custom puzzle piece shape complexity (1-5) */
   complexity?: number;
+}
+
+export interface MathCaptchaConfig {
+  /** Difficulty level affecting number ranges and operations */
+  difficulty?: "easy" | "medium" | "hard";
+  /** Operations to include in math problems */
+  operations?: ("add" | "subtract" | "multiply" | "divide")[];
+  /** Range for numbers in equations */
+  numberRange?: {
+    min: number;
+    max: number;
+  };
+  /** Whether to include negative numbers */
+  allowNegative?: boolean;
+  /** Whether to include decimal results */
+  allowDecimals?: boolean;
+  /** Display format for the equation */
+  displayFormat?: "horizontal" | "vertical";
+}
+
+export interface PatternCaptchaConfig {
+  /** Difficulty level affecting pattern complexity */
+  difficulty?: "easy" | "medium" | "hard";
+  /** Number of items to display in the pattern */
+  gridSize?: number;
+  /** Pattern types to include */
+  patternTypes?: ("shape" | "color" | "sequence" | "rotation" | "size" | "mixed")[];
+  /** Whether to include distractors (similar but incorrect options) */
+  includeDistractors?: boolean;
 }
 
 export interface ValidationRules {
@@ -66,60 +95,12 @@ export interface ConfettiOptions {
   duration?: number;
 }
 
-// Internal server-side ReCAPTZ types (not exposed to users)
-export interface ReCAPTZConfig {
-  baseUrl: string;
-  timeout?: number;
-  retries?: number;
-  debug?: boolean;
-}
-
-export interface ServerCaptchaSession {
-  sessionToken: string;
-  challengeText: string;
-  expiresAt: string;
-  config: {
-    type: CaptchaType;
-    length: number;
-    caseSensitive: boolean;
-    maxAttempts: number;
-    expiryMinutes: number;
-    enableAudio: boolean;
-    showSuccessAnimation: boolean;
-    showConfetti: boolean;
-    darkMode: boolean;
-    rtl: boolean;
-    refreshable: boolean;
-    autoFocus: boolean;
-  };
-  maxAttempts: number;
-  attemptsRemaining: number;
-}
-
-export interface ServerCaptchaVerification {
-  success: boolean;
-  verified: boolean;
-  sessionToken: string;
-  attemptsRemaining: number;
-  message?: string;
-  errorMessage?: string;
-  analytics?: {
-    timeTaken: number;
-    difficulty: number;
-    inputMethod: string;
-  };
-}
-
-export interface ServerCaptchaAudio {
-  audioText: string;
-  audioConfig: {
-    language: string;
-    rate: number;
-    pitch: number;
-    volume: number;
-    spellOut: boolean;
-  };
-  supportedLanguages: string[];
+// Client-side analytics (optional)
+export interface CaptchaAnalytics {
+  timeTaken: number;
+  attempts: number;
+  difficulty: number;
+  inputMethod: string;
 }
 
 export interface CaptchaProps {
@@ -162,23 +143,26 @@ export interface CaptchaProps {
   confettiOptions?: ConfettiOptions;
   /** Slider captcha configuration */
   sliderConfig?: SliderCaptchaConfig;
+  /** Math captcha configuration */
+  mathConfig?: MathCaptchaConfig;
+  /** Pattern captcha configuration */
+  patternConfig?: PatternCaptchaConfig;
 }
 
-// Internal context type (simplified for internal use)
+// Internal context type (simplified for client-side use)
 export interface CaptchaContextType {
   captchaText: string;
   userInput: string;
   isValid: boolean;
   error: string | null;
-  refresh: () => Promise<void>;
+  refresh: () => void;
   setUserInput: (input: string) => void;
-  validate: () => Promise<boolean>;
+  validate: () => boolean;
   currentAttempts: number;
   maxAttempts: number | undefined;
   i18n: CaptchaI18n;
   isLoading: boolean;
-  sessionToken: string | null;
-  playAudio: () => Promise<void>;
+  playAudio: () => void;
 }
 
 // Configuration for hooks-based API (simplified)
@@ -195,26 +179,24 @@ export interface CaptchaConfig {
 // Return type for useCaptchaGenerator hook
 export interface CaptchaGenerator {
   captchaText: string;
-  refresh: () => Promise<void>;
-  generateNew: (config?: Partial<CaptchaConfig>) => Promise<string>;
+  refresh: () => void;
+  generateNew: (config?: Partial<CaptchaConfig>) => string;
   isLoading: boolean;
-  sessionToken: string | null;
 }
 
 // Return type for useCaptchaValidator hook
 export interface CaptchaValidator {
-  validate: (input: string, sessionToken: string) => Promise<boolean>;
+  validate: (input: string, captcha: string) => boolean;
   validateWithRules: (
     input: string,
-    sessionToken: string,
+    captcha: string,
     rules?: ValidationRules
-  ) => Promise<{
+  ) => {
     isValid: boolean;
     error: string | null;
-  }>;
+  };
   error: string | null;
   isValid: boolean;
-  isLoading: boolean;
 }
 
 // Return type for useCaptchaAttempts hook
@@ -223,26 +205,23 @@ export interface CaptchaAttempts {
   maxAttempts: number;
   remainingAttempts: number;
   isMaxReached: boolean;
-  incrementAttempts: () => void;
+  incrementAttempts: (success: boolean, timeTaken?: number) => void;
   resetAttempts: () => void;
 }
 
 // Return type for useCaptchaAudio hook
 export interface CaptchaAudio {
   speak: (text: string) => void;
-  playServerAudio: (sessionToken: string) => Promise<void>;
   isSupported: boolean;
   isPlaying: boolean;
   stop: () => void;
-  isLoading: boolean;
 }
 
 // Return type for comprehensive useCaptchaState hook
 export interface CaptchaState {
   // Generator state
   captchaText: string;
-  refresh: () => Promise<void>;
-  sessionToken: string | null;
+  refresh: () => void;
 
   // Input state
   userInput: string;
@@ -251,7 +230,7 @@ export interface CaptchaState {
   // Validation state
   isValid: boolean;
   error: string | null;
-  validate: () => Promise<boolean>;
+  validate: () => boolean;
 
   // Attempts state
   attempts: number;
@@ -261,13 +240,11 @@ export interface CaptchaState {
 
   // Audio functionality
   speakCaptcha: () => void;
-  playServerAudio: () => Promise<void>;
   isAudioSupported: boolean;
   isAudioPlaying: boolean;
 
   // Loading states
   isLoading: boolean;
-  isValidating: boolean;
 
   // Configuration
   config: CaptchaConfig;

@@ -5,6 +5,8 @@ export { CaptchaCanvas } from "./components/CaptchaCanvas";
 export { CaptchaInput } from "./components/CaptchaInput";
 export { CaptchaSuccess } from "./components/CaptchaSuccess";
 export { CaptchaTimer } from "./components/CaptchaTimer";
+export { default as MathCaptcha } from "./components/MathCaptcha";
+export { default as PatternCaptcha } from "./components/PatternCaptcha";
 export { SliderCaptcha } from "./components/SliderCaptcha";
 
 // Context
@@ -18,11 +20,8 @@ export {
   useCaptchaState,
   useCaptchaValidator,
   useCaptchaWithAutoRefresh,
-  useCaptchaWithInterval,
+  useCaptchaWithInterval
 } from "./hooks";
-
-// Configuration API
-export { modeManager as configureReCAPTZ } from "./utils/captchaMode";
 
 // Types (only user-facing types)
 export type {
@@ -37,8 +36,9 @@ export type {
   CaptchaType,
   CaptchaValidator,
   ConfettiOptions,
+  MathCaptchaConfig,
   SliderCaptchaConfig,
-  ValidationRules,
+  ValidationRules
 } from "./types";
 
 import "./index.css";

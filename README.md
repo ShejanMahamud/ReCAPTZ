@@ -1,18 +1,21 @@
 # ReCAPTZ
 
-A modern, customizable CAPTCHA component for React applications with TypeScript support and accessibility features.
+A modern, lightweight, purely client-side CAPTCHA component for React applications with TypeScript support and accessibility features.
 
 [![npm version](https://badge.fury.io/js/recaptz.svg)](https://badge.fury.io/js/recaptz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- **Security**: Built-in server-side validation with automatic fallback to client-side
+- **Pure Client-Side**: No server dependencies, works completely offline
+- **Lightweight**: Minimal bundle size with zero external API calls
+- **Zero Configuration**: Works out of the box without any setup
 - **Accessibility**: Screen reader support, keyboard navigation, and audio feedback
 - **TypeScript**: Full TypeScript support with comprehensive type definitions
 - **Customizable**: Multiple CAPTCHA types, themes, and validation rules
 - **Internationalization**: Multi-language support with RTL layout compatibility
 - **Mobile-Friendly**: Responsive design optimized for all devices
+- **Cost-Effective**: No server costs or maintenance required
 
 ## Installation
 

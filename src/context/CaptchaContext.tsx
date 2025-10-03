@@ -1,18 +1,23 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { CaptchaContextType, CaptchaProps, ValidationRules } from "../types";
-import { generateCaptcha, validateCaptcha } from "../utils/captchaGenerator";
-import { modeManager } from "../utils/captchaMode";
-import { CaptchaError } from "../utils/recaptzClient";
+import React, { useEffect, useRef } from "react";
+import { Provider } from "react-redux";
+import { store } from "../store";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { setMaxAttempts } from "../store/slices/attemptsSlice";
+import { initializeAudioAsync } from "../store/slices/audioSlice";
+import {
+  generateCaptchaAsync,
+  refreshCaptchaAsync,
+  resetSlider,
+  setConfig,
+  setSliderPosition,
+  setSliderTarget,
+  validateCaptchaAsync,
+  validateSlider
+} from "../store/slices/captchaSlice";
+import { CaptchaProps, ValidationRules } from "../types";
 
-const CaptchaContext = createContext<CaptchaContextType | null>(null);
-
-export const CaptchaProvider: React.FC<{
+// Internal component that uses Redux hooks
+const CaptchaConfigProvider: React.FC<{
   children: React.ReactNode;
   type?: CaptchaProps["type"];
   length?: number;
@@ -20,9 +25,10 @@ export const CaptchaProvider: React.FC<{
   customCharacters?: string;
   validationRules?: ValidationRules;
   onValidate?: (isValid: boolean) => void;
-  maxAttempts: number | undefined;
+  maxAttempts?: number;
   i18n?: any;
   onFail?: () => void;
+  mathConfig?: CaptchaProps["mathConfig"];
 }> = ({
   children,
   type = "mixed",
@@ -31,438 +37,132 @@ export const CaptchaProvider: React.FC<{
   customCharacters,
   validationRules,
   onValidate,
-  maxAttempts,
+  maxAttempts = 3,
   i18n = {},
   onFail,
+  mathConfig,
 }) => {
-  const [captchaText, setCaptchaText] = useState("");
-  const [userInput, setUserInput] = useState("");
-  const [isValid, setIsValid] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const [startTime, setStartTime] = useState<number>(Date.now());
-  const [errorSeverity, setErrorSeverity] = useState<"low" | "medium" | "high">(
-    "medium"
-  );
-  const [retryCount, setRetryCount] = useState(0);
-  const [currentMode, setCurrentMode] = useState<"client" | "server">("client");
+    const dispatch = useAppDispatch();
+    const isValid = useAppSelector((state) => state.captcha.isValid);
+    const isMaxReached = useAppSelector((state) => state.attempts.isMaxReached);
+    const isInitialized = useRef(false);
 
-  // Generate initial CAPTCHA on mount
-  useEffect(() => {
-    generateCaptchaWithAutoMode();
-  }, []);
+    // Initialize configuration and generate initial CAPTCHA ONCE
+    useEffect(() => {
+      // Prevent multiple initializations (especially in StrictMode)
+      if (isInitialized.current) return;
+      isInitialized.current = true;
 
-  const handleError = useCallback((err: unknown, fallbackMessage: string) => {
-    if (err instanceof CaptchaError) {
-      setError(err.message);
-      setErrorSeverity(err.severity);
-      return err;
-    } else {
-      const errorMessage = err instanceof Error ? err.message : fallbackMessage;
-      setError(errorMessage);
-      setErrorSeverity("medium");
-      return new Error(errorMessage);
-    }
-  }, []);
-
-  const generateCaptchaWithAutoMode = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    setErrorSeverity("medium");
-
-    try {
-      // Force client mode for slider captchas
-      if (type === "slider") {
-        setCurrentMode("client");
-        const clientCaptcha = generateCaptcha(type, length, customCharacters);
-        setCaptchaText(clientCaptcha);
-        setSessionToken(null);
-        setStartTime(Date.now());
-        setRetryCount(0);
-        setIsLoading(false);
-        return;
-      }
-
-      const mode = await modeManager.getCurrentMode();
-      setCurrentMode(mode);
-
-      if (mode === "server") {
-        const client = modeManager.getServerClient();
-        if (client) {
-          const session = await client.generate({
-            type: type === "custom" ? "mixed" : type,
-            length,
-            caseSensitive,
-            maxAttempts: maxAttempts || 3,
-            enableAudio: true,
-            showSuccessAnimation: true,
-          });
-
-          setCaptchaText(session.challengeText);
-          setSessionToken(session.sessionToken);
-          setStartTime(Date.now());
-          setRetryCount(0);
-          return;
-        }
-      }
-
-      // Fallback to client mode
-      setCurrentMode("client");
-      const clientCaptcha = generateCaptcha(
-        type || "mixed",
+      dispatch(setConfig({
+        type,
         length,
-        customCharacters
-      );
-      setCaptchaText(clientCaptcha);
-      setSessionToken(null);
-      setStartTime(Date.now());
-      setRetryCount(0);
-    } catch (err) {
-      const captchaError = handleError(err, "Failed to generate CAPTCHA");
-
-      // For high severity errors, don't auto-retry
-      if (
-        captchaError instanceof CaptchaError &&
-        captchaError.severity === "high"
-      ) {
-        return;
-      }
-
-      // Implement exponential backoff for retries
-      if (retryCount < 3) {
-        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-        setTimeout(() => {
-          setRetryCount((prev) => prev + 1);
-          generateCaptchaWithAutoMode();
-        }, delay);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    type,
-    length,
-    caseSensitive,
-    customCharacters,
-    maxAttempts,
-    retryCount,
-    handleError,
-  ]);
-
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    setErrorSeverity("medium");
-    setUserInput("");
-    setIsValid(false);
-    setAttempts(0);
-
-    try {
-      const mode = await modeManager.getCurrentMode();
-      setCurrentMode(mode);
-
-      if (mode === "server" && sessionToken) {
-        const client = modeManager.getServerClient();
-        if (client) {
-          try {
-            const session = await client.refresh(sessionToken, {
-              reason: "manual",
-            });
-
-            setCaptchaText(session.challengeText);
-            setSessionToken(session.sessionToken);
-            setStartTime(Date.now());
-            setRetryCount(0);
-            return;
-          } catch (refreshError) {
-            // If refresh fails, fall back to generating new CAPTCHA
-            if (
-              refreshError instanceof CaptchaError &&
-              refreshError.severity !== "high"
-            ) {
-              console.info(
-                "Refresh failed, generating new CAPTCHA:",
-                refreshError.message
-              );
-              await generateCaptchaWithAutoMode();
-              return;
-            }
-            throw refreshError;
-          }
-        }
-      }
-
-      // Client mode or fallback
-      await generateCaptchaWithAutoMode();
-    } catch (err) {
-      handleError(err, "Failed to refresh CAPTCHA");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sessionToken, generateCaptchaWithAutoMode, handleError]);
-
-  const validate = useCallback(async (): Promise<boolean> => {
-    if (attempts >= (maxAttempts || 3)) {
-      setError("Maximum attempts reached. Please refresh the CAPTCHA.");
-      setErrorSeverity("medium");
-      await refresh();
-      return false;
-    }
-
-    if (!userInput.trim() && type !== "slider") {
-      setError("Please enter the CAPTCHA code.");
-      setErrorSeverity("low");
-      return false;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setErrorSeverity("medium");
-
-    try {
-      const mode = await modeManager.getCurrentMode();
-      let result = false;
-
-      if (mode === "server" && sessionToken) {
-        const client = modeManager.getServerClient();
-        if (client) {
-          const timeTaken = Date.now() - startTime;
-          const serverResult = await client.verify(sessionToken, userInput, {
-            timeTaken,
-            attempts: attempts + 1,
-            inputMethod: "keyboard",
-          });
-
-          result = serverResult.success;
-          setIsValid(result);
-
-          if (result) {
-            onValidate?.(true);
-            setError(null);
-          } else {
-            setAttempts((prev) => prev + 1);
-            const remainingAttempts = serverResult.attemptsRemaining;
-
-            if (remainingAttempts > 0) {
-              setError(
-                `Incorrect code. ${remainingAttempts} attempt${
-                  remainingAttempts !== 1 ? "s" : ""
-                } remaining.`
-              );
-              setErrorSeverity("low");
-            } else {
-              setError("Maximum attempts reached. Generating a new CAPTCHA.");
-              setErrorSeverity("medium");
-              setTimeout(async () => {
-                await refresh();
-              }, 1500);
-            }
-
-            onValidate?.(false);
-            onFail?.();
-          }
-
-          return result;
-        }
-      }
-
-      // Special handling for slider captcha
-      if (type === "slider") {
-        // For slider captcha, userInput should be "validated" when successful
-        const isSliderValid = userInput === "validated";
-        setIsValid(isSliderValid);
-        result = isSliderValid;
-
-        if (!isSliderValid) {
-          setAttempts((prev) => prev + 1);
-          setError("Please complete the slider puzzle.");
-          setErrorSeverity("low");
-
-          if (attempts + 1 >= (maxAttempts || 3)) {
-            setTimeout(async () => {
-              await refresh();
-            }, 1500);
-          }
-
-          onValidate?.(false);
-          onFail?.();
-        } else {
-          setError(null);
-          onValidate?.(true);
-        }
-
-        return result;
-      }
-
-      // Regular text captcha validation
-      const rules = {
-        ...validationRules,
         caseSensitive,
-        allowedCharacters: customCharacters,
-        minLength: length,
-        maxLength: length,
-      };
-
-      const { isValid: valid, error: validationError } = validateCaptcha(
-        userInput,
-        captchaText,
-        rules,
-        i18n
-      );
-
-      setIsValid(valid);
-      result = valid;
-
-      if (!valid) {
-        setAttempts((prev) => prev + 1);
-        setError(validationError);
-        setErrorSeverity("low");
-
-        if (attempts + 1 >= (maxAttempts || 3)) {
-          setTimeout(async () => {
-            await refresh();
-          }, 1500);
-        }
-
-        onValidate?.(false);
-        onFail?.();
-      } else {
-        setError(null);
-        onValidate?.(true);
-      }
-
-      return result;
-    } catch (err) {
-      const captchaError = handleError(err, "Verification failed");
-      setAttempts((prev) => prev + 1);
-      onValidate?.(false);
-      onFail?.();
-
-      // For certain errors, auto-refresh
-      if (captchaError instanceof CaptchaError) {
-        if (
-          captchaError.type === "NotFound" ||
-          captchaError.type === "SessionExpired"
-        ) {
-          setTimeout(async () => {
-            await refresh();
-          }, 1000);
-        }
-      }
-
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    attempts,
-    maxAttempts,
-    userInput,
-    sessionToken,
-    startTime,
-    onValidate,
-    onFail,
-    refresh,
-    handleError,
-    validationRules,
-    caseSensitive,
-    customCharacters,
-    length,
-    captchaText,
-    i18n,
-    type,
-  ]);
-
-  const playAudio = useCallback(async () => {
-    try {
-      const mode = await modeManager.getCurrentMode();
-
-      if (mode === "server" && sessionToken) {
-        const client = modeManager.getServerClient();
-        if (client) {
-          try {
-            const audioData = await client.getAudio(sessionToken);
-
-            if ("speechSynthesis" in window) {
-              window.speechSynthesis.cancel();
-              const utterance = new SpeechSynthesisUtterance(
-                audioData.audioText
-              );
-              utterance.rate = audioData.audioConfig.rate;
-              utterance.pitch = audioData.audioConfig.pitch;
-              utterance.volume = audioData.audioConfig.volume;
-              window.speechSynthesis.speak(utterance);
-              return;
-            }
-          } catch (err) {
-            console.info("Server audio failed, using fallback:", err);
-          }
-        }
-      }
-
-      // Client mode audio or fallback
-      if ("speechSynthesis" in window) {
-        try {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance();
-          utterance.text = Array.from(captchaText).join(" ");
-          utterance.rate = 0.7;
-          utterance.pitch = 1;
-          utterance.volume = 1;
-          window.speechSynthesis.speak(utterance);
-        } catch (fallbackErr) {
-          setError("Audio is temporarily unavailable.");
-          setErrorSeverity("low");
-        }
-      } else {
-        setError("Audio is not supported in your browser.");
-        setErrorSeverity("low");
-      }
-    } catch (err) {
-      setError("Audio playback failed.");
-      setErrorSeverity("low");
-    }
-  }, [sessionToken, captchaText]);
-
-  // Auto-clear low severity errors
-  useEffect(() => {
-    if (error && errorSeverity === "low") {
-      const timer = setTimeout(() => {
-        setError(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error, errorSeverity]);
-
-  return (
-    <CaptchaContext.Provider
-      value={{
-        captchaText,
-        userInput,
-        isValid,
-        error,
-        refresh,
-        setUserInput,
-        validate,
-        currentAttempts: attempts,
-        maxAttempts,
+        customCharacters,
+        validationRules,
         i18n,
-        isLoading,
-        sessionToken,
-        playAudio,
-      }}
-    >
-      {children}
-    </CaptchaContext.Provider>
+        maxAttempts,
+        mathConfig,
+      }));
+
+      dispatch(setMaxAttempts(maxAttempts));
+      dispatch(initializeAudioAsync());
+
+      // Generate initial CAPTCHA only once
+      dispatch(generateCaptchaAsync({ type, length, customCharacters, mathConfig }));
+    }, []); // Empty deps - only run once on mount
+
+    // Handle type changes separately to regenerate CAPTCHA
+    useEffect(() => {
+      // Skip if not initialized yet
+      if (!isInitialized.current) return;
+
+      // Only generate new CAPTCHA when type changes
+      dispatch(generateCaptchaAsync({ type, length, customCharacters, mathConfig }));
+    }, [type, dispatch]); // Only when type changes
+
+    // Handle validation callback - call once when validation state changes
+    useEffect(() => {
+      if (onValidate) {
+        onValidate(isValid);
+      }
+    }, [isValid]); // Remove onValidate from dependencies to prevent cascade
+
+    // Handle max attempts reached
+    useEffect(() => {
+      if (isMaxReached && !isValid) {
+        setTimeout(() => {
+          dispatch(refreshCaptchaAsync());
+          onFail?.();
+        }, 2000);
+      }
+    }, [isMaxReached, isValid, dispatch, onFail]);
+
+    return <>{children}</>;
+  };
+
+// Main provider component that wraps with Redux Provider
+export const CaptchaProvider: React.FC<{
+  children: React.ReactNode;
+  type?: CaptchaProps["type"];
+  length?: number;
+  caseSensitive?: boolean;
+  customCharacters?: string;
+  validationRules?: ValidationRules;
+  onValidate?: (isValid: boolean) => void;
+  maxAttempts?: number;
+  i18n?: any;
+  onFail?: () => void;
+  mathConfig?: CaptchaProps["mathConfig"];
+}> = (props) => {
+  return (
+    <Provider store={store}>
+      <CaptchaConfigProvider {...props} />
+    </Provider>
   );
 };
 
+// Custom hook for components to access CAPTCHA state and actions
 export const useCaptcha = () => {
-  const context = useContext(CaptchaContext);
-  if (!context) {
-    throw new Error("useCaptcha must be used within a CaptchaProvider");
-  }
-  return context;
+  const dispatch = useAppDispatch();
+  const captchaState = useAppSelector((state) => state.captcha);
+  const attemptsState = useAppSelector((state) => state.attempts);
+  const audioState = useAppSelector((state) => state.audio);
+
+  return {
+    // CAPTCHA data
+    captchaText: captchaState.captchaText,
+    userInput: captchaState.userInput,
+    isValid: captchaState.isValid,
+    error: captchaState.error,
+    isLoading: captchaState.isLoading,
+
+    // Slider data
+    sliderPosition: captchaState.sliderPosition,
+    sliderTarget: captchaState.sliderTarget,
+    sliderValidated: captchaState.sliderValidated,
+
+    // Attempts data
+    currentAttempts: attemptsState.currentAttempts,
+    maxAttempts: attemptsState.maxAttempts,
+
+    // Audio data
+    isAudioSupported: audioState.isSupported,
+    isAudioPlaying: audioState.isPlaying,
+
+    // Configuration
+    i18n: captchaState.i18n,
+
+    // Actions
+    setUserInput: (input: string) => dispatch({ type: 'captcha/setUserInput', payload: input }),
+    validate: () => dispatch(validateCaptchaAsync()),
+    refresh: () => dispatch(refreshCaptchaAsync()),
+    playAudio: () => dispatch({ type: 'audio/speakTextAsync', payload: captchaState.captchaText }),
+
+    // Slider actions
+    setSliderPosition: (position: number) => dispatch(setSliderPosition(position)),
+    setSliderTarget: (target: number) => dispatch(setSliderTarget(target)),
+    validateSlider: (position: number, target: number, tolerance?: number) =>
+      dispatch(validateSlider({ position, target, tolerance })),
+    resetSlider: () => dispatch(resetSlider()),
+  };
 };
