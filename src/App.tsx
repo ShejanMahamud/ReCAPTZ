@@ -856,6 +856,7 @@ function CaptchaPlayground() {
 
               <div className="flex justify-center">
                 <Captcha
+
                   type={appliedConfig.type}
                   length={appliedConfig.length}
                   darkMode={appliedConfig.darkMode}
